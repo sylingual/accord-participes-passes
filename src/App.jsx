@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import emailjs from '@emailjs/browser'
 import { exercises } from './exercises'
 import { emailConfig, isEmailConfigured } from './emailConfig'
 
 const TOTAL = exercises.length
+const PAGE_SIZE = 5
+const PAGES = Math.ceil(TOTAL / PAGE_SIZE)
+const PASS_THRESHOLD = 75 // % de réussite en dessous duquel on encourage
 
 // Normalise une réponse pour une comparaison SOUPLE :
 // minuscules, accents ignorés, ponctuation et espaces superflus retirés.
@@ -22,28 +25,39 @@ function isCorrect(input, answers) {
   return answers.some((a) => normalize(a) === n)
 }
 
+// Rend un texte où **mot** devient <strong>mot</strong>.
+function RichText({ text }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.startsWith('**') && p.endsWith('**') ? (
+          <strong key={i}>{p.slice(2, -2)}</strong>
+        ) : (
+          <span key={i}>{p}</span>
+        )
+      )}
+    </>
+  )
+}
+
 export default function App() {
   const [phase, setPhase] = useState('welcome') // welcome | exercise | done
   const [name, setName] = useState('')
-  const [index, setIndex] = useState(0)
-  const [input, setInput] = useState('')
-  const [checked, setChecked] = useState(false)
-  const [wasRight, setWasRight] = useState(false)
-  const [history, setHistory] = useState([]) // { id, section, prompt, verb, given, expected, correct }
-  const [outcome, setOutcome] = useState('') // 'finished' | 'stopped'
-  const [sendState, setSendState] = useState('idle') // idle | sending | sent | error
-  const inputRef = useRef(null)
+  const [page, setPage] = useState(0)
+  const [inputs, setInputs] = useState({}) // { [id]: string }
+  const [pageChecked, setPageChecked] = useState(false)
+  const [history, setHistory] = useState([]) // { id, section, verb, prompt, given, expected, correct }
+  const [outcome, setOutcome] = useState('') // finished | stopped
+  const [sendState, setSendState] = useState('idle')
 
-  const ex = exercises[index]
-  const isLast = index === TOTAL - 1
+  const pageExercises = useMemo(
+    () => exercises.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [page]
+  )
+  const isLastPage = page === PAGES - 1
   const correctCount = history.filter((h) => h.correct).length
-
-  // Focus automatique sur le champ de réponse à chaque nouvel exercice.
-  useEffect(() => {
-    if (phase === 'exercise' && !checked && inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [phase, index, checked])
+  const allFilled = pageExercises.every((ex) => (inputs[ex.id] || '').trim())
 
   function startSession(e) {
     e.preventDefault()
@@ -51,35 +65,46 @@ export default function App() {
     setPhase('exercise')
   }
 
-  function validate() {
-    if (checked || !input.trim()) return
-    const right = isCorrect(input, ex.answers)
-    setWasRight(right)
-    setChecked(true)
-    setHistory((h) => [
-      ...h,
-      {
-        id: ex.id,
-        section: ex.section,
-        prompt: `${ex.before}____${ex.after}`.trim(),
-        verb: ex.verb,
-        given: input.trim(),
-        expected: ex.answers[0],
-        correct: right,
-      },
-    ])
+  function setInput(id, value) {
+    setInputs((prev) => ({ ...prev, [id]: value }))
   }
 
-  function nextExercise() {
-    setIndex((i) => i + 1)
-    setInput('')
-    setChecked(false)
-    setWasRight(false)
+  function validatePage() {
+    if (pageChecked || !allFilled) return
+    const rows = pageExercises.map((ex) => {
+      const given = (inputs[ex.id] || '').trim()
+      return {
+        id: ex.id,
+        section: ex.section,
+        verb: ex.verb,
+        prompt: `${ex.before}____${ex.after}`.trim(),
+        given,
+        expected: ex.answers[0],
+        correct: isCorrect(given, ex.answers),
+      }
+    })
+    setHistory((h) => [...h, ...rows])
+    setPageChecked(true)
+  }
+
+  function nextPage() {
+    setPage((p) => p + 1)
+    setPageChecked(false)
   }
 
   function finish(reason) {
     setOutcome(reason)
     setPhase('done')
+  }
+
+  function restart() {
+    setPage(0)
+    setInputs({})
+    setPageChecked(false)
+    setHistory([])
+    setOutcome('')
+    setSendState('idle')
+    setPhase('exercise')
   }
 
   return (
@@ -90,17 +115,16 @@ export default function App() {
         )}
 
         {phase === 'exercise' && (
-          <Exercise
-            ex={ex}
-            index={index}
-            input={input}
+          <ExercisePage
+            page={page}
+            pageExercises={pageExercises}
+            inputs={inputs}
             setInput={setInput}
-            checked={checked}
-            wasRight={wasRight}
-            isLast={isLast}
-            inputRef={inputRef}
-            onValidate={validate}
-            onNext={nextExercise}
+            pageChecked={pageChecked}
+            allFilled={allFilled}
+            isLastPage={isLastPage}
+            onValidate={validatePage}
+            onNext={nextPage}
             onStop={() => finish('stopped')}
             onFinishAll={() => finish('finished')}
           />
@@ -114,6 +138,7 @@ export default function App() {
             correctCount={correctCount}
             sendState={sendState}
             setSendState={setSendState}
+            onRestart={restart}
           />
         )}
       </div>
@@ -126,9 +151,9 @@ function Welcome({ name, setName, onStart }) {
     <form onSubmit={onStart} className="welcome">
       <h1>L’accord des participes passés</h1>
       <p className="lead">
-        Un atelier <strong>en autonomie</strong> : un exercice à la fois. À chaque
-        réponse validée, la règle te sera rappelée. Tu avances à ton rythme et tu
-        décides quand t’arrêter.
+        Un atelier <strong>en autonomie</strong> : cinq exercices par page. À
+        chaque validation, la règle te sera rappelée. Tu avances à ton rythme et
+        tu décides quand t’arrêter.
       </p>
       <label className="field">
         <span>Avant de commencer, écris ton prénom :</span>
@@ -148,60 +173,136 @@ function Welcome({ name, setName, onStart }) {
   )
 }
 
-function Exercise({
-  ex,
-  index,
-  input,
+function ExercisePage({
+  page,
+  pageExercises,
+  inputs,
   setInput,
-  checked,
-  wasRight,
-  isLast,
-  inputRef,
+  pageChecked,
+  allFilled,
+  isLastPage,
   onValidate,
   onNext,
   onStop,
   onFinishAll,
 }) {
-  const progress = Math.round(((index + (checked ? 1 : 0)) / TOTAL) * 100)
+  const firstIndex = page * PAGE_SIZE
+  const lastIndex = firstIndex + pageExercises.length
+  const doneUnits = firstIndex + (pageChecked ? pageExercises.length : 0)
+  const progress = Math.round((doneUnits / TOTAL) * 100)
+  const topRef = useRef(null)
 
-  function onKeyDown(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      if (!checked) onValidate()
-    }
-  }
+  // Remonte en haut de la carte à chaque changement de page
+  // (mais pas au moment de la validation, pour ne pas déplacer l'élève).
+  useEffect(() => {
+    if (topRef.current) topRef.current.scrollIntoView({ block: 'start' })
+  }, [page])
 
   return (
-    <div className="exercise">
+    <div className="exercise-page" ref={topRef}>
       <div className="progress" aria-hidden="true">
         <div className="progress-bar" style={{ width: `${progress}%` }} />
       </div>
       <div className="topline">
         <span className="counter">
-          Exercice {index + 1} / {TOTAL}
+          Exercices {firstIndex + 1}–{lastIndex} / {TOTAL}
         </span>
-        <span className="section-tag">{ex.section}</span>
+        <span className="section-tag">
+          Page {page + 1} / {PAGES}
+        </span>
       </div>
 
-      <div className="verb-chip">
-        Verbe : <strong>{ex.verb}</strong>
+      <div className="cards">
+        {pageExercises.map((ex, i) => (
+          <ExerciseCard
+            key={ex.id}
+            ex={ex}
+            number={firstIndex + i + 1}
+            value={inputs[ex.id] || ''}
+            onChange={(v) => setInput(ex.id, v)}
+            checked={pageChecked}
+            onEnter={onValidate}
+          />
+        ))}
+      </div>
+
+      {!pageChecked ? (
+        <button
+          className="btn btn-primary sticky-validate"
+          onClick={onValidate}
+          disabled={!allFilled}
+        >
+          {allFilled
+            ? 'Valider mes réponses'
+            : 'Réponds aux 5 exercices pour valider'}
+        </button>
+      ) : (
+        <div className="choices">
+          {isLastPage ? (
+            <button className="btn btn-finish" onClick={onFinishAll}>
+              🎉 J’ai tout fini&nbsp;!
+            </button>
+          ) : (
+            <>
+              <button className="btn btn-continue" onClick={onNext}>
+                Je veux encore m’entraîner.
+              </button>
+              <button className="btn btn-stop" onClick={onStop}>
+                C’est trop facile pour moi, je m’arrête là.
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
+  const [showVerbEn, setShowVerbEn] = useState(false)
+  const [showRuleEn, setShowRuleEn] = useState(false)
+  const right = checked && isCorrect(value, ex.answers)
+
+  return (
+    <div className={`ex-card ${checked ? (right ? 'card-ok' : 'card-ko') : ''}`}>
+      <div className="ex-head">
+        <span className="ex-number">Exercice {number}</span>
+        <span className="section-tag small">{ex.section}</span>
+      </div>
+
+      <div className="verb-line">
+        <span className="verb-chip">
+          Verbe : <strong>{ex.verb}</strong>
+        </span>
+        <button
+          type="button"
+          className="link-btn"
+          onClick={() => setShowVerbEn((s) => !s)}
+        >
+          🇬🇧 {showVerbEn ? 'masquer' : 'traduire'}
+        </button>
+        {showVerbEn && <span className="verb-en">→ {ex.verbEn}</span>}
       </div>
 
       {ex.context && <div className="context">{ex.context}</div>}
 
       <p className="sentence">
         {ex.before}
-        <span className={`blank-wrap ${checked ? (wasRight ? 'ok' : 'ko') : ''}`}>
+        <span className={`blank-wrap ${checked ? (right ? 'ok' : 'ko') : ''}`}>
           <input
-            ref={inputRef}
             className="blank"
             type="text"
-            value={input}
+            value={value}
             disabled={checked}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                if (!checked) onEnter()
+              }
+            }}
             placeholder="…"
-            aria-label="Ta réponse"
+            aria-label={`Réponse pour l’exercice ${number}`}
             autoComplete="off"
             spellCheck={false}
           />
@@ -209,49 +310,40 @@ function Exercise({
         {ex.after}
       </p>
 
-      {!checked && (
-        <button
-          className="btn btn-primary"
-          onClick={onValidate}
-          disabled={!input.trim()}
-        >
-          Valider ma réponse
-        </button>
-      )}
-
       {checked && (
-        <>
-          <div className={`feedback ${wasRight ? 'feedback-ok' : 'feedback-ko'}`}>
-            <div className="feedback-head">
-              {wasRight ? '✅ Bravo, c’est exact !' : '❌ Pas tout à fait.'}
-            </div>
-            {!wasRight && (
-              <div className="feedback-answer">
-                Réponse attendue : <strong>{ex.answers[0]}</strong>
-              </div>
-            )}
-            <div className="reminder">
-              <span className="reminder-label">Règle&nbsp;:</span> {ex.reminder}
-            </div>
+        <div className={`feedback ${right ? 'feedback-ok' : 'feedback-ko'}`}>
+          <div className="feedback-head">
+            {right ? '✅ Bravo, c’est exact !' : '❌ Pas tout à fait.'}
           </div>
-
-          <div className="choices">
-            {isLast ? (
-              <button className="btn btn-finish" onClick={onFinishAll}>
-                🎉 J’ai tout fini&nbsp;!
-              </button>
-            ) : (
-              <>
-                <button className="btn btn-continue" onClick={onNext}>
-                  Je veux encore m’entraîner.
-                </button>
-                <button className="btn btn-stop" onClick={onStop}>
-                  C’est trop facile pour moi, je m’arrête là.
-                </button>
-              </>
-            )}
+          {!right && (
+            <div className="feedback-answer">
+              Réponse attendue : <strong>{ex.answers[0]}</strong>
+            </div>
+          )}
+          <div className="reminder">
+            <div className="reminder-rule">
+              <span className="reminder-label">Règle&nbsp;:</span>{' '}
+              {showRuleEn ? ex.ruleEn : ex.rule}
+            </div>
+            <div className="examples">
+              <span className="examples-label">
+                {showRuleEn ? 'Examples:' : 'Exemples :'}
+              </span>
+              {(showRuleEn ? ex.examplesEn : ex.examples).map((s, i) => (
+                <div key={i} className="example-line">
+                  <RichText text={s} />
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() => setShowRuleEn((s) => !s)}
+            >
+              🇬🇧 {showRuleEn ? 'Revenir au français' : 'Traduire en anglais'}
+            </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   )
@@ -268,7 +360,15 @@ function buildDetails(history) {
     .join('\n')
 }
 
-function Done({ name, outcome, history, correctCount, sendState, setSendState }) {
+function Done({
+  name,
+  outcome,
+  history,
+  correctCount,
+  sendState,
+  setSendState,
+  onRestart,
+}) {
   const answered = history.length
   const percent = answered ? Math.round((correctCount / answered) * 100) : 0
   const scoreStr = `${correctCount} / ${answered}`
@@ -276,6 +376,7 @@ function Done({ name, outcome, history, correctCount, sendState, setSendState })
     outcome === 'finished' ? 'Atelier terminé' : 'Arrêt anticipé'
   const details = buildDetails(history)
   const dateStr = new Date().toLocaleString('fr-FR')
+  const needsEncouragement = percent < PASS_THRESHOLD
   const sentOnceRef = useRef(false)
 
   function downloadResults() {
@@ -299,11 +400,9 @@ function Done({ name, outcome, history, correctCount, sendState, setSendState })
     URL.revokeObjectURL(url)
   }
 
-  // Envoi automatique de l'e-mail (une seule fois) si EmailJS est configuré.
   useEffect(() => {
     if (sentOnceRef.current) return
     sentOnceRef.current = true
-
     if (!isEmailConfigured()) {
       setSendState('idle')
       return
@@ -355,6 +454,20 @@ function Done({ name, outcome, history, correctCount, sendState, setSendState })
         </div>
       </div>
 
+      {needsEncouragement ? (
+        <div className="encourage">
+          💪 Ne te décourage pas&nbsp;! L’accord des participes passés, ça
+          s’apprend avec de l’entraînement. Reprends l’atelier : tu vas
+          progresser, c’est sûr&nbsp;!
+        </div>
+      ) : (
+        percent === 100 && (
+          <div className="encourage encourage-top">
+            🌟 Sans faute&nbsp;! Bravo, tu maîtrises vraiment bien.
+          </div>
+        )
+      )}
+
       <div className={`send-status send-${sendState}`}>
         {sendState === 'sending' && '📨 Envoi de tes résultats au professeur…'}
         {sendState === 'sent' &&
@@ -365,15 +478,20 @@ function Done({ name, outcome, history, correctCount, sendState, setSendState })
           'ℹ️ Télécharge tes résultats ci-dessous et remets-les à ton professeur.'}
       </div>
 
-      <button className="btn btn-secondary" onClick={downloadResults}>
-        ⬇️ Télécharger mes résultats (.txt)
-      </button>
+      <div className="end-actions">
+        <button className="btn btn-primary" onClick={onRestart}>
+          🔁 Recommencer l’atelier
+        </button>
+        <button className="btn btn-secondary" onClick={downloadResults}>
+          ⬇️ Télécharger mes résultats (.txt)
+        </button>
+      </div>
 
       <details className="recap">
         <summary>Voir le détail de mes réponses</summary>
         <ul>
           {history.map((h, i) => (
-            <li key={h.id} className={h.correct ? 'ok' : 'ko'}>
+            <li key={i} className={h.correct ? 'ok' : 'ko'}>
               <span className="recap-mark">{h.correct ? '✅' : '❌'}</span>
               <span>
                 ({h.verb}) « {h.prompt} » → <em>{h.given}</em>
