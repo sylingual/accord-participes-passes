@@ -11,9 +11,9 @@
   --ok: #15803d;
   --ok-bg: #ecfdf3;
   --ok-line: #a7f3d0;
-  --ko: #b91c1c;
-  --ko-bg: #fef2f2;
-  --ko-line: #fecaca;
+  --ko: #c2410c; /* orange (« pas tout à fait » n'est pas rouge) */
+  --ko-bg: #fff7ed;
+  --ko-line: #fed7aa;
   --shadow: 0 10px 40px rgba(31, 41, 55, 0.14);
 }
 
@@ -308,6 +308,19 @@ h1 {
   color: #fff;
   font-size: 18px;
 }
+.btn-restart-inline {
+  background: none;
+  color: var(--muted);
+  border: none;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 6px;
+  margin-top: 2px;
+}
+.btn-restart-inline:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
 
 /* ---------- Écran final ---------- */
 .done {
@@ -426,17 +439,34 @@ h1 {
   font-size: 11.5px;
 }
 
-.verb-line {
+/* Phrase + verbe (à droite, en italique, entre parenthèses) */
+.sentence-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+}
+.sentence-row .sentence {
+  flex: 1 1 auto;
+  min-width: 60%;
+}
+.verb-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.verb-inline em {
+  font-style: italic;
+  font-size: 16px;
 }
 .verb-en {
   font-style: italic;
-  color: var(--muted);
-  font-size: 14.5px;
+  color: var(--primary-dark);
+  font-size: 14px;
 }
 
 .link-btn {
@@ -454,9 +484,18 @@ h1 {
   text-decoration: underline;
 }
 
-/* Rappel de règle + exemples */
+/* Rappel de règle + formation + exemples */
 .reminder-rule {
+  margin-bottom: 6px;
+}
+.reminder-formation {
+  background: #eef2ff;
+  border-radius: 8px;
+  padding: 7px 11px;
   margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--primary-dark);
 }
 .examples {
   background: rgba(255, 255, 255, 0.85);

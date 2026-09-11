@@ -127,6 +127,7 @@ export default function App() {
             onNext={nextPage}
             onStop={() => finish('stopped')}
             onFinishAll={() => finish('finished')}
+            onRestart={restart}
           />
         )}
 
@@ -185,6 +186,7 @@ function ExercisePage({
   onNext,
   onStop,
   onFinishAll,
+  onRestart,
 }) {
   const firstIndex = page * PAGE_SIZE
   const lastIndex = firstIndex + pageExercises.length
@@ -192,11 +194,12 @@ function ExercisePage({
   const progress = Math.round((doneUnits / TOTAL) * 100)
   const topRef = useRef(null)
 
-  // Remonte en haut de la carte à chaque changement de page
-  // (mais pas au moment de la validation, pour ne pas déplacer l'élève).
+  // Remonte tout en haut à chaque changement de page ET à la validation
+  // (pour relire les corrections depuis le premier exercice).
   useEffect(() => {
     if (topRef.current) topRef.current.scrollIntoView({ block: 'start' })
-  }, [page])
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+  }, [page, pageChecked])
 
   return (
     <div className="exercise-page" ref={topRef}>
@@ -245,13 +248,16 @@ function ExercisePage({
           ) : (
             <>
               <button className="btn btn-continue" onClick={onNext}>
-                Je veux encore m’entraîner.
+                Je veux des exercices en plus.
               </button>
               <button className="btn btn-stop" onClick={onStop}>
                 C’est trop facile pour moi, je m’arrête là.
               </button>
             </>
           )}
+          <button className="btn btn-restart-inline" onClick={onRestart}>
+            🔁 Recommencer depuis le début
+          </button>
         </div>
       )}
     </div>
@@ -270,50 +276,50 @@ function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
         <span className="section-tag small">{ex.section}</span>
       </div>
 
-      <div className="verb-line">
-        <span className="verb-chip">
-          Verbe : <strong>{ex.verb}</strong>
-        </span>
-        <button
-          type="button"
-          className="link-btn"
-          onClick={() => setShowVerbEn((s) => !s)}
-        >
-          🇬🇧 {showVerbEn ? 'masquer' : 'traduire'}
-        </button>
-        {showVerbEn && <span className="verb-en">→ {ex.verbEn}</span>}
-      </div>
-
       {ex.context && <div className="context">{ex.context}</div>}
 
-      <p className="sentence">
-        {ex.before}
-        <span className={`blank-wrap ${checked ? (right ? 'ok' : 'ko') : ''}`}>
-          <input
-            className="blank"
-            type="text"
-            value={value}
-            disabled={checked}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                if (!checked) onEnter()
-              }
-            }}
-            placeholder="…"
-            aria-label={`Réponse pour l’exercice ${number}`}
-            autoComplete="off"
-            spellCheck={false}
-          />
-        </span>
-        {ex.after}
-      </p>
+      <div className="sentence-row">
+        <p className="sentence">
+          {ex.before}
+          <span className={`blank-wrap ${checked ? (right ? 'ok' : 'ko') : ''}`}>
+            <input
+              className="blank"
+              type="text"
+              value={value}
+              disabled={checked}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  if (!checked) onEnter()
+                }
+              }}
+              placeholder="…"
+              aria-label={`Réponse pour l’exercice ${number}`}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </span>
+          {ex.after}
+        </p>
+        <div className="verb-inline">
+          <em>({ex.verb})</em>
+          <button
+            type="button"
+            className="link-btn"
+            title="Traduire le verbe en anglais"
+            onClick={() => setShowVerbEn((s) => !s)}
+          >
+            🇬🇧
+          </button>
+          {showVerbEn && <span className="verb-en">{ex.verbEn}</span>}
+        </div>
+      </div>
 
       {checked && (
         <div className={`feedback ${right ? 'feedback-ok' : 'feedback-ko'}`}>
           <div className="feedback-head">
-            {right ? '✅ Bravo, c’est exact !' : '❌ Pas tout à fait.'}
+            {right ? '✅ Bravo, c’est exact ! 🎉' : '🟠 Pas tout à fait.'}
           </div>
           {!right && (
             <div className="feedback-answer">
@@ -325,6 +331,11 @@ function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
               <span className="reminder-label">Règle&nbsp;:</span>{' '}
               {showRuleEn ? ex.ruleEn : ex.rule}
             </div>
+            {ex.formation && (
+              <div className="reminder-formation">
+                {showRuleEn ? ex.formationEn : ex.formation}
+              </div>
+            )}
             <div className="examples">
               <span className="examples-label">
                 {showRuleEn ? 'Examples:' : 'Exemples :'}

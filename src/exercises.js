@@ -9,14 +9,18 @@
 //   context    : phrase-modèle facultative (série « transformation »)
 //   before/after : le texte de la phrase autour du trou
 //   answers    : réponses acceptées (les accents sont ignorés à la correction)
-//   rule       : l'explication (message de correction), en français
-//   ruleEn     : la même explication en anglais (bouton « traduire »)
+//   rule       : l'explication de l'ACCORD (message de correction), en français
+//   ruleEn     : la même explication en anglais
+//   formation  : rappel sur la FORMATION du participe passé (facultatif ; pour la
+//                série 1, la « règle » est déjà la règle de formation)
+//   formationEn: le rappel de formation en anglais
 //   examples   : phrases-exemples (niveau A2) ; **texte** = mis en gras
 //   examplesEn : les mêmes exemples en anglais
 
 export const exercises = [
   // ---------------------------------------------------------------------------
   // SÉRIE 1 — Rappel : la forme du participe passé
+  // (la « règle » EST la règle de formation)
   // ---------------------------------------------------------------------------
   {
     id: 1,
@@ -146,6 +150,8 @@ export const exercises = [
     answers: ['parcourus'],
     rule: 'Employé seul, le participe passé s’accorde comme un adjectif avec le nom : ici « chemins » (masculin pluriel).',
     ruleEn: 'Used alone, the past participle agrees like an adjective with the noun: here « chemins » (masculine plural).',
+    formation: 'Formation : « parcourir » suit « courir » → participe passé en -U (courir → couru).',
+    formationEn: 'Formation: « parcourir » follows « courir » → past participle in -U (courir → couru).',
     examples: [
       'Les chemins **parcourus** ensemble sont mes plus beaux souvenirs.',
       'Bien **rangée**, la chambre semblait toute neuve.',
@@ -165,6 +171,8 @@ export const exercises = [
     answers: ['disparue'],
     rule: 'Participe passé employé seul → accord avec le nom : « chienne » est féminin singulier.',
     ruleEn: 'Past participle used alone → agreement with the noun: « chienne » is feminine singular.',
+    formation: 'Formation : « disparaître » suit « paraître » → participe passé en -U (paraître → paru, disparaître → disparu).',
+    formationEn: 'Formation: « disparaître » follows « paraître » → past participle in -U (paraître → paru, disparaître → disparu).',
     examples: [
       '**Disparue** depuis midi, la petite chatte est enfin rentrée.',
       '**Partis** trop tôt, les invités ont raté le gâteau.',
@@ -184,6 +192,8 @@ export const exercises = [
     answers: ['porté'],
     rule: 'On accorde avec le noyau du groupe : « le bruit » (masculin singulier), pas avec « forêt ».',
     ruleEn: 'You agree with the head noun of the group: « le bruit » (masculine singular), not with « forêt ».',
+    formation: 'Formation : verbe en -ER → participe passé en -É (règle de base, sans exception).',
+    formationEn: 'Formation: an -ER verb → past participle in -É (the basic rule, no exception).',
     examples: [
       '**Porté** par le vent, le parfum des fleurs arrivait jusqu’à nous.',
       'Le petit mot, **écrit** à la main, l’a beaucoup touchée.',
@@ -203,6 +213,8 @@ export const exercises = [
     answers: ['interrogés'],
     rule: 'Participe passé employé seul → accord avec « les témoins » (masculin pluriel).',
     ruleEn: 'Past participle used alone → agreement with « les témoins » (masculine plural).',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       '**Interrogés** par la police, les témoins ont tout raconté.',
       '**Félicités** par le professeur, les élèves souriaient.',
@@ -222,6 +234,8 @@ export const exercises = [
     answers: ['cassés'],
     rule: 'Deux noms dont un masculin (« jambe » + « bras ») → accord au masculin pluriel.',
     ruleEn: 'Two nouns, one of them masculine (« jambe » + « bras ») → agreement in the masculine plural.',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'Sa jambe et son bras **cassés** le font beaucoup souffrir.',
       'Le stylo et la règle **oubliés** sont restés à l’école.',
@@ -245,6 +259,8 @@ export const exercises = [
     answers: ['fermée'],
     rule: 'Avec ÊTRE, le participe passé s’accorde avec le sujet : « la porte » (féminin singulier).',
     ruleEn: 'With ÊTRE, the past participle agrees with the subject: « la porte » (feminine singular).',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'La porte est **fermée**, mais la fenêtre est **ouverte**.',
       'La lettre est enfin **arrivée** !',
@@ -264,6 +280,8 @@ export const exercises = [
     answers: ['accueillis'],
     rule: 'Avec ÊTRE, accord avec le sujet « ses parents » (masculin pluriel).',
     ruleEn: 'With ÊTRE, agreement with the subject « ses parents » (masculine plural).',
+    formation: 'Formation : verbe en -IR → participe passé en -I (accueillir → accueilli).',
+    formationEn: 'Formation: an -IR verb → past participle in -I (accueillir → accueilli).',
     examples: [
       'Ses parents ont été **accueillis** avec un grand sourire.',
       'Les voyageurs sont **rentrés** heureux de leur journée.',
@@ -283,6 +301,8 @@ export const exercises = [
     answers: ['réglées'],
     rule: 'Avec ÊTRE, accord avec le sujet « les affaires » (féminin pluriel).',
     ruleEn: 'With ÊTRE, agreement with the subject « les affaires » (feminine plural).',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'Une fois **réglées**, les affaires ont été vite oubliées.',
       'Les valises sont déjà **préparées** pour le grand départ.',
@@ -302,6 +322,8 @@ export const exercises = [
     answers: ['arrivée'],
     rule: 'Avec ÊTRE, accord avec le sujet « elle » (féminin singulier).',
     ruleEn: 'With ÊTRE, agreement with the subject « elle » (feminine singular).',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'Elle est **arrivée** la première, toute essoufflée.',
       'Grand-mère est **venue** nous faire un gros câlin.',
@@ -321,6 +343,8 @@ export const exercises = [
     answers: ['sortis'],
     rule: 'Avec ÊTRE, accord avec le sujet « tous les chiens » (masculin pluriel).',
     ruleEn: 'With ÊTRE, agreement with the subject « tous les chiens » (masculine plural).',
+    formation: 'Formation : verbe en -IR → participe passé en -I (sortir → sorti).',
+    formationEn: 'Formation: an -IR verb → past participle in -I (sortir → sorti).',
     examples: [
       'Les chiens sont **sortis** en courant dans le jardin.',
       'Les enfants sont **montés** dans le train, tout excités.',
@@ -340,6 +364,8 @@ export const exercises = [
     answers: ['terminée'],
     rule: 'Avec ÊTRE, accord avec le sujet « la toilette » (féminin singulier), pas avec « enfants ».',
     ruleEn: 'With ÊTRE, agreement with the subject « la toilette » (feminine singular), not with « enfants ».',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'La fête est **terminée**, mais les sourires restent.',
       'La chanson est **finie**, et tout le monde applaudit.',
@@ -363,6 +389,8 @@ export const exercises = [
     answers: ['loué'],
     rule: 'Avec AVOIR : pas d’accord car le COD « votre place » est placé APRÈS le verbe.',
     ruleEn: 'With AVOIR: no agreement, because the direct object « votre place » comes AFTER the verb.',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'Nous avons **loué** un petit bateau pour la journée.',
       'Ils ont **réservé** une table juste devant la mer.',
@@ -382,6 +410,8 @@ export const exercises = [
     answers: ['étonné'],
     rule: 'Avec AVOIR : le COD « ses parents » est placé APRÈS → pas d’accord.',
     ruleEn: 'With AVOIR: the direct object « ses parents » comes AFTER → no agreement.',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'Elle a **étonné** tout le monde avec sa belle chanson.',
       'Le magicien a **surpris** les enfants émerveillés.',
@@ -401,6 +431,8 @@ export const exercises = [
     answers: ['dirigés'],
     rule: 'Avec AVOIR : accord avec le COD placé AVANT. « que » = les enfants (masculin pluriel).',
     ruleEn: 'With AVOIR: agreement with the direct object placed BEFORE. « que » = the children (masculine plural).',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'Les enfants que nous avons **dirigés** ont bien écouté.',
       'Les amis qu’elle a **invités** sont tous venus.',
@@ -420,6 +452,8 @@ export const exercises = [
     answers: ['donnés'],
     rule: 'Avec AVOIR : accord avec le COD placé AVANT. « qu’ » = les outils (masculin pluriel).',
     ruleEn: 'With AVOIR: agreement with the direct object placed BEFORE. « qu’ » = the tools (masculine plural).',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'Voici les outils qu’il m’a **donnés**.',
       'Je garde précieusement les livres que tu m’as **prêtés**.',
@@ -439,6 +473,8 @@ export const exercises = [
     answers: ['écrites'],
     rule: 'Avec AVOIR : accord avec le COD placé AVANT. « que » = les lettres (féminin pluriel).',
     ruleEn: 'With AVOIR: agreement with the direct object placed BEFORE. « que » = the letters (feminine plural).',
+    formation: 'Formation : « écrire » est une exception (-RE) : participe passé en -IT (écrit).',
+    formationEn: 'Formation: « écrire » is an exception (-RE): past participle in -IT (écrit).',
     examples: [
       'Les lettres qu’il a **écrites** sont pleines d’amour.',
       'Les histoires que grand-père a **racontées** me manquent.',
@@ -458,6 +494,8 @@ export const exercises = [
     answers: ['corrigées'],
     rule: 'Avec AVOIR : accord avec le COD placé AVANT. « qu’ » = les fautes (féminin pluriel).',
     ruleEn: 'With AVOIR: agreement with the direct object placed BEFORE. « qu’ » = the mistakes (feminine plural).',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'Les fautes qu’il a **corrigées** ont toutes disparu.',
       'Les photos que j’ai **choisies** sont sur le mur.',
@@ -477,6 +515,8 @@ export const exercises = [
     answers: ['offert'],
     rule: 'Avec AVOIR : le COD « un cadeau » est placé APRÈS → pas d’accord.',
     ruleEn: 'With AVOIR: the direct object « un cadeau » comes AFTER → no agreement.',
+    formation: 'Formation : verbe en -FFRIR → participe passé en -ERT (offrir → offert).',
+    formationEn: 'Formation: a -FFRIR verb → past participle in -ERT (offrir → offert).',
     examples: [
       'Il a **offert** un joli cadeau à sa petite sœur.',
       'Nous avons **préparé** une surprise pour maman.',
@@ -496,6 +536,8 @@ export const exercises = [
     answers: ['pensé'],
     rule: '« penser à » n’a pas de COD (c’est un complément indirect) → jamais d’accord.',
     ruleEn: '« penser à » has no direct object (it is an indirect complement) → never any agreement.',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'As-tu **pensé** à ton amie qui est malade ?',
       'Ils ont **parlé** de leurs vacances toute la soirée.',
@@ -516,6 +558,8 @@ export const exercises = [
     answers: ['trouvée'],
     rule: 'Avec AVOIR : « l’ » (= la solution) est un COD placé AVANT → accord au féminin singulier.',
     ruleEn: 'With AVOIR: « l’ » (= the solution) is a direct object placed BEFORE → feminine singular agreement.',
+    formation: 'Formation : verbe en -ER → participe passé en -É.',
+    formationEn: 'Formation: an -ER verb → past participle in -É.',
     examples: [
       'La solution ? Il ne l’a pas **trouvée**.',
       'Ma clé perdue, je l’ai enfin **retrouvée** !',
@@ -535,6 +579,8 @@ export const exercises = [
     answers: ['envoyé'],
     rule: 'Avec AVOIR : jamais d’accord avec le pronom « EN ».',
     ruleEn: 'With AVOIR: never any agreement with the pronoun « EN ».',
+    formation: 'Formation : verbe en -ER → participe passé en -É (envoyer → envoyé).',
+    formationEn: 'Formation: an -ER verb → past participle in -É (envoyer → envoyé).',
     examples: [
       'Des roses ? Je lui en ai **envoyé** pour lui dire merci.',
       'Des bonbons ? Ils en ont **mangé** beaucoup trop !',
@@ -560,6 +606,8 @@ export const exercises = [
     answers: ['saisi'],
     rule: 'Le participe passé employé comme adjectif s’accorde avec le nom : « le papillon » (masculin singulier).',
     ruleEn: 'A past participle used as an adjective agrees with the noun: « le papillon » (masculine singular).',
+    formation: 'Formation : verbe en -IR → participe passé en -I (saisir → saisi).',
+    formationEn: 'Formation: an -IR verb → past participle in -I (saisir → saisi).',
     examples: [
       'Le papillon **saisi** entre ses mains tremblait un peu.',
       'Le trésor **caché** attend son explorateur.',
@@ -580,6 +628,8 @@ export const exercises = [
     answers: ['choisie'],
     rule: 'Participe passé adjectif → accord avec « la cravate » (féminin singulier).',
     ruleEn: 'Adjective past participle → agreement with « la cravate » (feminine singular).',
+    formation: 'Formation : verbe en -IR → participe passé en -I (choisir → choisi).',
+    formationEn: 'Formation: an -IR verb → past participle in -I (choisir → choisi).',
     examples: [
       'La cravate **choisie** par papa est magnifique.',
       'La chanson **préférée** de maman passe à la radio.',
@@ -600,6 +650,8 @@ export const exercises = [
     answers: ['remise'],
     rule: 'Participe passé adjectif → accord avec « une lettre » (féminin singulier).',
     ruleEn: 'Adjective past participle → agreement with « une lettre » (feminine singular).',
+    formation: 'Formation : « remettre » suit « mettre » → participe passé en -IS (mettre → mis).',
+    formationEn: 'Formation: « remettre » follows « mettre » → past participle in -IS (mettre → mis).',
     examples: [
       'Une lettre **remise** en main propre, quelle joie !',
       'Une promesse **tenue** rend le cœur tout léger.',
@@ -618,8 +670,10 @@ export const exercises = [
     before: 'l’étagère ',
     after: '',
     answers: ['peinte'],
-    rule: 'Les verbes en -INDRE font leur participe passé en -T ; ici, accord avec « l’étagère » (féminin singulier).',
-    ruleEn: 'Verbs ending in -INDRE form their past participle in -T; here it agrees with « l’étagère » (feminine singular).',
+    rule: 'Participe passé employé comme adjectif → accord avec « l’étagère » (féminin singulier).',
+    ruleEn: 'A past participle used as an adjective → agreement with « l’étagère » (feminine singular).',
+    formation: 'Formation : verbe en -INDRE → participe passé en -T (peindre → peint).',
+    formationEn: 'Formation: a -INDRE verb → past participle in -T (peindre → peint).',
     examples: [
       'L’étagère **peinte** en bleu sèche au soleil.',
       'La porte **repeinte** brille comme si elle était neuve.',
@@ -638,8 +692,10 @@ export const exercises = [
     before: 'le sommet ',
     after: '',
     answers: ['atteint'],
-    rule: 'Les verbes en -INDRE font leur participe passé en -T ; ici, accord avec « le sommet » (masculin singulier).',
-    ruleEn: 'Verbs ending in -INDRE form their past participle in -T; here it agrees with « le sommet » (masculine singular).',
+    rule: 'Participe passé employé comme adjectif → accord avec « le sommet » (masculin singulier).',
+    ruleEn: 'A past participle used as an adjective → agreement with « le sommet » (masculine singular).',
+    formation: 'Formation : verbe en -INDRE → participe passé en -T (atteindre → atteint).',
+    formationEn: 'Formation: a -INDRE verb → past participle in -T (atteindre → atteint).',
     examples: [
       'Le sommet **atteint**, ils ont pleuré de bonheur.',
       'Le but **atteint**, toute l’équipe a sauté de joie.',
