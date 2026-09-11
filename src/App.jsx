@@ -117,10 +117,6 @@ export default function App() {
           />
         )}
       </div>
-      <footer className="footer">
-        Atelier de renforcement — l’accord des participes passés · d’après le
-        document de L.&nbsp;Merenne (Lycée St-Jacques, Français&nbsp;3<sup>e</sup>)
-      </footer>
     </div>
   )
 }
@@ -128,7 +124,6 @@ export default function App() {
 function Welcome({ name, setName, onStart }) {
   return (
     <form onSubmit={onStart} className="welcome">
-      <div className="badge">✍️ Français&nbsp;3<sup>e</sup></div>
       <h1>L’accord des participes passés</h1>
       <p className="lead">
         Un atelier <strong>en autonomie</strong> : un exercice à la fois. À chaque
@@ -141,7 +136,7 @@ function Welcome({ name, setName, onStart }) {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Ton prénom (et nom si tu veux)"
+          placeholder="Ton prénom/nom"
           autoFocus
           maxLength={60}
         />

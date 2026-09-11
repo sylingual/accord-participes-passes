@@ -20,7 +20,7 @@ export const exercises = [
     before: 'Le participe passé de « prendre » est : ',
     after: '.',
     answers: ['pris'],
-    reminder: '« prendre » → pris. Les formes du participe passé s’apprennent par cœur.',
+    reminder: 'Verbe en -RE, mais irrégulier : le participe passé est en -is (prendre → pris, comme mettre → mis, apprendre → appris).',
   },
   {
     id: 2,
@@ -29,7 +29,7 @@ export const exercises = [
     before: 'Le participe passé de « découvrir » est : ',
     after: '.',
     answers: ['découvert'],
-    reminder: '« découvrir » → découvert (terminaison en -ert).',
+    reminder: 'Les verbes en -vrir et -ffrir font leur participe passé en -ert : couvrir → couvert, offrir → offert, découvrir → découvert.',
   },
   {
     id: 3,
@@ -38,7 +38,7 @@ export const exercises = [
     before: 'Le participe passé de « mourir » est : ',
     after: '.',
     answers: ['mort'],
-    reminder: '« mourir » → mort (terminaison en -t).',
+    reminder: 'Un verbe en -IR fait normalement son participe passé en -i, mais « mourir » est une exception : mort (en -t).',
   },
   {
     id: 4,
@@ -47,7 +47,7 @@ export const exercises = [
     before: 'Le participe passé de « produire » est : ',
     after: '.',
     answers: ['produit'],
-    reminder: '« produire » → produit. Comme conduire → conduit, cuire → cuit.',
+    reminder: 'Les verbes en -uire font leur participe passé en -uit : conduire → conduit, cuire → cuit, produire → produit.',
   },
   {
     id: 5,
@@ -56,7 +56,7 @@ export const exercises = [
     before: 'Le participe passé de « inclure » est : ',
     after: '.',
     answers: ['inclus'],
-    reminder: '« inclure » → inclus (attention : pas comme conclure → conclu !).',
+    reminder: 'Verbe en -RE irrégulier : « inclure » fait son participe passé en -us. Attention, « conclure » fait « conclu » (sans s) !',
   },
   {
     id: 6,
@@ -65,7 +65,7 @@ export const exercises = [
     before: 'Le participe passé de « mettre » est : ',
     after: '.',
     answers: ['mis'],
-    reminder: '« mettre » → mis. Comme soumettre → soumis, prendre → pris.',
+    reminder: 'Verbe en -RE irrégulier : « mettre » fait son participe passé en -is, comme prendre → pris et soumettre → soumis.',
   },
 
   // ---------------------------------------------------------------------------
