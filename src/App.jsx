@@ -36,6 +36,12 @@ for (const sec of SECTIONS) {
 }
 const PAGE_COUNT = PAGES.length
 
+// Numéro d'affichage = position dans la liste (continue 1..N, indépendante des id).
+const NUM = {}
+exercises.forEach((ex, i) => {
+  NUM[ex.id] = i + 1
+})
+
 // Normalise une réponse pour une comparaison SOUPLE :
 // minuscules, accents ignorés, ponctuation et espaces superflus retirés.
 function normalize(str) {
@@ -223,8 +229,8 @@ function ExercisePage({
   onRestartSet,
 }) {
   const items = pageData.items
-  const firstNum = items[0].id
-  const lastNum = items[items.length - 1].id
+  const firstNum = NUM[items[0].id]
+  const lastNum = NUM[items[items.length - 1].id]
   const doneUnits = pageChecked ? lastNum : firstNum - 1
   const progress = Math.round((doneUnits / TOTAL) * 100)
   const topRef = useRef(null)
@@ -266,7 +272,7 @@ function ExercisePage({
             <ExerciseCard
               key={ex.id}
               ex={ex}
-              number={ex.id}
+              number={NUM[ex.id]}
               value={inputs[ex.id] || ''}
               onChange={(v) => setInput(ex.id, v)}
               checked={pageChecked}
@@ -383,6 +389,9 @@ function MultiCard({ items, inputs, setInput, checked, onEnter }) {
             {items.map((ex) => (
               <li key={ex.id}>
                 <em>{ex.verb}</em> — {showEn ? ex.ruleEn : ex.rule}
+                <div className="multi-example">
+                  <RichText text={(showEn ? ex.examplesEn : ex.examples)[0]} />
+                </div>
               </li>
             ))}
           </ul>
@@ -398,11 +407,11 @@ function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
   const right = checked && isCorrect(value, ex.answers)
 
   return (
-    <div className={`ex-card ${checked ? (right ? 'card-ok' : 'card-ko') : ''}`}>
-      <div className="ex-head">
-        <span className="ex-number">{number}</span>
-      </div>
-
+    <div
+      className={`ex-card compact ${
+        checked ? (right ? 'card-ok' : 'card-ko') : ''
+      }`}
+    >
       {ex.context && <div className="context">{ex.context}</div>}
 
       <div className="sentence-row">
@@ -428,6 +437,7 @@ function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
             />
           </span>
           {ex.after}
+          <span className="ex-num-inline">{number}</span>
         </p>
         <div className="verb-inline">
           <em>({ex.verb})</em>
