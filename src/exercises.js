@@ -25,6 +25,7 @@ export const exercises = [
   {
     id: 1,
     section: 'Rappel — la forme du participe passé',
+    group: 'pp-forms',
     verb: 'prendre',
     verbEn: 'to take',
     before: 'Le participe passé de « prendre » est : ',
@@ -44,6 +45,7 @@ export const exercises = [
   {
     id: 2,
     section: 'Rappel — la forme du participe passé',
+    group: 'pp-forms',
     verb: 'découvrir',
     verbEn: 'to discover',
     before: 'Le participe passé de « découvrir » est : ',
@@ -63,6 +65,7 @@ export const exercises = [
   {
     id: 3,
     section: 'Rappel — la forme du participe passé',
+    group: 'pp-forms',
     verb: 'mourir',
     verbEn: 'to die',
     before: 'Le participe passé de « mourir » est : ',
@@ -82,6 +85,7 @@ export const exercises = [
   {
     id: 4,
     section: 'Rappel — la forme du participe passé',
+    group: 'pp-forms',
     verb: 'produire',
     verbEn: 'to produce',
     before: 'Le participe passé de « produire » est : ',
@@ -101,6 +105,7 @@ export const exercises = [
   {
     id: 5,
     section: 'Rappel — la forme du participe passé',
+    group: 'pp-forms',
     verb: 'inclure',
     verbEn: 'to include',
     before: 'Le participe passé de « inclure » est : ',
@@ -120,6 +125,7 @@ export const exercises = [
   {
     id: 6,
     section: 'Rappel — la forme du participe passé',
+    group: 'pp-forms',
     verb: 'mettre',
     verbEn: 'to put',
     before: 'Le participe passé de « mettre » est : ',

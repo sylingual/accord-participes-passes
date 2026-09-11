@@ -1,12 +1,40 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import emailjs from '@emailjs/browser'
 import { exercises } from './exercises'
 import { emailConfig, isEmailConfigured } from './emailConfig'
 
 const TOTAL = exercises.length
-const PAGE_SIZE = 5
-const PAGES = Math.ceil(TOTAL / PAGE_SIZE)
+const CHUNK = 5
 const PASS_THRESHOLD = 75 // % de réussite en dessous duquel on encourage
+
+// --- Construction des « sets » (pages) --------------------------------------
+// On regroupe les exercices par section (série), puis on découpe chaque série
+// en morceaux de 5 max. La série 1 (« pp-forms ») devient une seule carte
+// factorisée. Chaque set porte un titre unique, affiché en haut.
+const SECTIONS = []
+for (const ex of exercises) {
+  const last = SECTIONS[SECTIONS.length - 1]
+  if (!last || last.section !== ex.section) {
+    SECTIONS.push({ section: ex.section, group: ex.group, items: [ex] })
+  } else {
+    last.items.push(ex)
+  }
+}
+const PAGES = []
+for (const sec of SECTIONS) {
+  if (sec.group === 'pp-forms') {
+    PAGES.push({ kind: 'multi', section: sec.section, items: sec.items })
+  } else {
+    for (let i = 0; i < sec.items.length; i += CHUNK) {
+      PAGES.push({
+        kind: 'single',
+        section: sec.section,
+        items: sec.items.slice(i, i + CHUNK),
+      })
+    }
+  }
+}
+const PAGE_COUNT = PAGES.length
 
 // Normalise une réponse pour une comparaison SOUPLE :
 // minuscules, accents ignorés, ponctuation et espaces superflus retirés.
@@ -22,6 +50,7 @@ function normalize(str) {
 
 function isCorrect(input, answers) {
   const n = normalize(input)
+  if (!n) return false
   return answers.some((a) => normalize(a) === n)
 }
 
@@ -44,20 +73,16 @@ function RichText({ text }) {
 export default function App() {
   const [phase, setPhase] = useState('welcome') // welcome | exercise | done
   const [name, setName] = useState('')
-  const [page, setPage] = useState(0)
+  const [pageIndex, setPageIndex] = useState(0)
   const [inputs, setInputs] = useState({}) // { [id]: string }
   const [pageChecked, setPageChecked] = useState(false)
-  const [history, setHistory] = useState([]) // { id, section, verb, prompt, given, expected, correct }
+  const [history, setHistory] = useState([]) // { id, verb, prompt, given, expected, correct }
   const [outcome, setOutcome] = useState('') // finished | stopped
   const [sendState, setSendState] = useState('idle')
 
-  const pageExercises = useMemo(
-    () => exercises.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
-    [page]
-  )
-  const isLastPage = page === PAGES - 1
+  const pageData = PAGES[pageIndex]
+  const isLastPage = pageIndex === PAGE_COUNT - 1
   const correctCount = history.filter((h) => h.correct).length
-  const allFilled = pageExercises.every((ex) => (inputs[ex.id] || '').trim())
 
   function startSession(e) {
     e.preventDefault()
@@ -70,14 +95,13 @@ export default function App() {
   }
 
   function validatePage() {
-    if (pageChecked || !allFilled) return
-    const rows = pageExercises.map((ex) => {
+    if (pageChecked) return
+    const rows = pageData.items.map((ex) => {
       const given = (inputs[ex.id] || '').trim()
       return {
         id: ex.id,
-        section: ex.section,
         verb: ex.verb,
-        prompt: `${ex.before}____${ex.after}`.trim(),
+        prompt: `${ex.before || ''}____${ex.after || ''}`.trim(),
         given,
         expected: ex.answers[0],
         correct: isCorrect(given, ex.answers),
@@ -88,7 +112,18 @@ export default function App() {
   }
 
   function nextPage() {
-    setPage((p) => p + 1)
+    setPageIndex((p) => p + 1)
+    setPageChecked(false)
+  }
+
+  // Recommence UNIQUEMENT le set en cours (efface ses réponses + son score).
+  function restartSet() {
+    setInputs((prev) => {
+      const next = { ...prev }
+      pageData.items.forEach((ex) => delete next[ex.id])
+      return next
+    })
+    setHistory((h) => h.slice(0, Math.max(0, h.length - pageData.items.length)))
     setPageChecked(false)
   }
 
@@ -97,8 +132,9 @@ export default function App() {
     setPhase('done')
   }
 
-  function restart() {
-    setPage(0)
+  // Recommence tout l'atelier (depuis le premier set), en gardant le prénom.
+  function restartAll() {
+    setPageIndex(0)
     setInputs({})
     setPageChecked(false)
     setHistory([])
@@ -116,18 +152,17 @@ export default function App() {
 
         {phase === 'exercise' && (
           <ExercisePage
-            page={page}
-            pageExercises={pageExercises}
+            pageData={pageData}
+            pageIndex={pageIndex}
             inputs={inputs}
             setInput={setInput}
             pageChecked={pageChecked}
-            allFilled={allFilled}
             isLastPage={isLastPage}
             onValidate={validatePage}
             onNext={nextPage}
             onStop={() => finish('stopped')}
             onFinishAll={() => finish('finished')}
-            onRestart={restart}
+            onRestartSet={restartSet}
           />
         )}
 
@@ -139,7 +174,7 @@ export default function App() {
             correctCount={correctCount}
             sendState={sendState}
             setSendState={setSendState}
-            onRestart={restart}
+            onRestart={restartAll}
           />
         )}
       </div>
@@ -152,9 +187,9 @@ function Welcome({ name, setName, onStart }) {
     <form onSubmit={onStart} className="welcome">
       <h1>L’accord des participes passés</h1>
       <p className="lead">
-        Un atelier <strong>en autonomie</strong> : cinq exercices par page. À
-        chaque validation, la règle te sera rappelée. Tu avances à ton rythme et
-        tu décides quand t’arrêter.
+        Un atelier <strong>en autonomie</strong>, set par set. À chaque
+        validation, la règle te sera rappelée. Tu avances à ton rythme et tu
+        décides quand t’arrêter.
       </p>
       <label className="field">
         <span>Avant de commencer, écris ton prénom :</span>
@@ -175,31 +210,31 @@ function Welcome({ name, setName, onStart }) {
 }
 
 function ExercisePage({
-  page,
-  pageExercises,
+  pageData,
+  pageIndex,
   inputs,
   setInput,
   pageChecked,
-  allFilled,
   isLastPage,
   onValidate,
   onNext,
   onStop,
   onFinishAll,
-  onRestart,
+  onRestartSet,
 }) {
-  const firstIndex = page * PAGE_SIZE
-  const lastIndex = firstIndex + pageExercises.length
-  const doneUnits = firstIndex + (pageChecked ? pageExercises.length : 0)
+  const items = pageData.items
+  const firstNum = items[0].id
+  const lastNum = items[items.length - 1].id
+  const doneUnits = pageChecked ? lastNum : firstNum - 1
   const progress = Math.round((doneUnits / TOTAL) * 100)
   const topRef = useRef(null)
 
-  // Remonte tout en haut à chaque changement de page ET à la validation
+  // Remonte tout en haut à chaque changement de set ET à la validation
   // (pour relire les corrections depuis le premier exercice).
   useEffect(() => {
     if (topRef.current) topRef.current.scrollIntoView({ block: 'start' })
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
-  }, [page, pageChecked])
+  }, [pageIndex, pageChecked])
 
   return (
     <div className="exercise-page" ref={topRef}>
@@ -208,36 +243,42 @@ function ExercisePage({
       </div>
       <div className="topline">
         <span className="counter">
-          Exercices {firstIndex + 1}–{lastIndex} / {TOTAL}
+          Exercices {firstNum}–{lastNum} / {TOTAL}
         </span>
         <span className="section-tag">
-          Page {page + 1} / {PAGES}
+          Set {pageIndex + 1} / {PAGE_COUNT}
         </span>
       </div>
 
+      <h2 className="set-title">{pageData.section}</h2>
+
       <div className="cards">
-        {pageExercises.map((ex, i) => (
-          <ExerciseCard
-            key={ex.id}
-            ex={ex}
-            number={firstIndex + i + 1}
-            value={inputs[ex.id] || ''}
-            onChange={(v) => setInput(ex.id, v)}
+        {pageData.kind === 'multi' ? (
+          <MultiCard
+            items={items}
+            inputs={inputs}
+            setInput={setInput}
             checked={pageChecked}
             onEnter={onValidate}
           />
-        ))}
+        ) : (
+          items.map((ex) => (
+            <ExerciseCard
+              key={ex.id}
+              ex={ex}
+              number={ex.id}
+              value={inputs[ex.id] || ''}
+              onChange={(v) => setInput(ex.id, v)}
+              checked={pageChecked}
+              onEnter={onValidate}
+            />
+          ))
+        )}
       </div>
 
       {!pageChecked ? (
-        <button
-          className="btn btn-primary sticky-validate"
-          onClick={onValidate}
-          disabled={!allFilled}
-        >
-          {allFilled
-            ? 'Valider mes réponses'
-            : 'Réponds aux 5 exercices pour valider'}
+        <button className="btn btn-primary sticky-validate" onClick={onValidate}>
+          Valider mes réponses
         </button>
       ) : (
         <div className="choices">
@@ -253,11 +294,98 @@ function ExercisePage({
               <button className="btn btn-stop" onClick={onStop}>
                 C’est trop facile pour moi, je m’arrête là.
               </button>
+              <button className="btn btn-restart-inline" onClick={onRestartSet}>
+                🔁 Recommencer ce set
+              </button>
             </>
           )}
-          <button className="btn btn-restart-inline" onClick={onRestart}>
-            🔁 Recommencer depuis le début
-          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Carte factorisée : plusieurs verbes, un seul intitulé.
+function MultiCard({ items, inputs, setInput, checked, onEnter }) {
+  const [showEn, setShowEn] = useState(false)
+  return (
+    <div className="ex-card multi-card">
+      <div className="multi-top">
+        <p className="multi-instruction">
+          Indique les participes passés{' '}
+          <em>(forme du masculin singulier)</em> :
+        </p>
+        <button
+          type="button"
+          className="link-btn"
+          onClick={() => setShowEn((s) => !s)}
+        >
+          🇬🇧 {showEn ? 'français' : 'anglais'}
+        </button>
+      </div>
+
+      <div className="verb-list">
+        {items.map((ex, i) => {
+          const val = inputs[ex.id] || ''
+          const right = checked && isCorrect(val, ex.answers)
+          return (
+            <div
+              key={ex.id}
+              className={`verb-row ${checked ? (right ? 'ok' : 'ko') : ''}`}
+            >
+              <span className="verb-num">{i + 1}.</span>
+              <span className="verb-inf">
+                <em>{ex.verb}</em>
+                {showEn && <span className="verb-en"> ({ex.verbEn})</span>}
+              </span>
+              <span className="arrow">→</span>
+              <span className={`blank-wrap ${checked ? (right ? 'ok' : 'ko') : ''}`}>
+                <input
+                  className="blank blank-sm"
+                  type="text"
+                  value={val}
+                  disabled={checked}
+                  onChange={(e) => setInput(ex.id, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      if (!checked) onEnter()
+                    }
+                  }}
+                  placeholder="…"
+                  aria-label={`Participe passé de ${ex.verb}`}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </span>
+              {checked && (
+                <span className="verb-feedback">
+                  {right ? (
+                    '✅'
+                  ) : (
+                    <>
+                      🟠 <strong>{ex.answers[0]}</strong>
+                    </>
+                  )}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {checked && (
+        <div className="reminder multi-reminder">
+          <span className="reminder-label">
+            {showEn ? 'Formation rules:' : 'Règles de formation :'}
+          </span>
+          <ul>
+            {items.map((ex) => (
+              <li key={ex.id}>
+                <em>{ex.verb}</em> — {showEn ? ex.ruleEn : ex.rule}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
@@ -272,8 +400,7 @@ function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
   return (
     <div className={`ex-card ${checked ? (right ? 'card-ok' : 'card-ko') : ''}`}>
       <div className="ex-head">
-        <span className="ex-number">Exercice {number}</span>
-        <span className="section-tag small">{ex.section}</span>
+        <span className="ex-number">{number}</span>
       </div>
 
       {ex.context && <div className="context">{ex.context}</div>}
@@ -364,7 +491,8 @@ function buildDetails(history) {
   return history
     .map((h, i) => {
       const mark = h.correct ? 'OK ' : 'X  '
-      return `${mark}${i + 1}. (${h.verb}) « ${h.prompt} » → réponse: "${h.given}"${
+      const given = h.given || '(vide)'
+      return `${mark}${i + 1}. (${h.verb}) « ${h.prompt} » → réponse: "${given}"${
         h.correct ? '' : ` (attendu: "${h.expected}")`
       }`
     })
@@ -396,7 +524,7 @@ function Done({
       `----------------------------------------\n` +
       `Élève      : ${name}\n` +
       `Score      : ${scoreStr} (${percent}%)\n` +
-      `Exercices  : ${answered} / ${exercises.length} faits\n` +
+      `Exercices  : ${answered} / ${TOTAL} faits\n` +
       `Statut     : ${outcomeLabel}\n` +
       `Date       : ${dateStr}\n\n` +
       `Détail :\n${details}\n`
@@ -428,7 +556,7 @@ function Done({
           score: scoreStr,
           correct: String(correctCount),
           answered: String(answered),
-          total: String(exercises.length),
+          total: String(TOTAL),
           percent: `${percent}%`,
           outcome: outcomeLabel,
           date: dateStr,
@@ -503,9 +631,9 @@ function Done({
         <ul>
           {history.map((h, i) => (
             <li key={i} className={h.correct ? 'ok' : 'ko'}>
-              <span className="recap-mark">{h.correct ? '✅' : '❌'}</span>
+              <span className="recap-mark">{h.correct ? '✅' : '🟠'}</span>
               <span>
-                ({h.verb}) « {h.prompt} » → <em>{h.given}</em>
+                ({h.verb}) « {h.prompt} » → <em>{h.given || '(vide)'}</em>
                 {!h.correct && (
                   <>
                     {' '}
