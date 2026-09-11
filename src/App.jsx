@@ -157,6 +157,7 @@ export default function App() {
 
         {phase === 'exercise' && (
           <ExercisePage
+            key={pageIndex}
             pageData={pageData}
             pageIndex={pageIndex}
             inputs={inputs}
@@ -233,6 +234,7 @@ function ExercisePage({
   const doneUnits = pageChecked ? lastNum : firstNum - 1
   const progress = Math.round((doneUnits / TOTAL) * 100)
   const topRef = useRef(null)
+  const [showEn, setShowEn] = useState(false)
 
   // Remonte tout en haut à chaque changement de set ET à la validation
   // (pour relire les corrections depuis le premier exercice).
@@ -255,7 +257,18 @@ function ExercisePage({
         </span>
       </div>
 
-      <h2 className="set-title">{pageData.section}</h2>
+      <div className="set-header">
+        <h2 className="set-title">{pageData.section}</h2>
+        {pageData.kind === 'single' && (
+          <button
+            type="button"
+            className="link-btn set-lang"
+            onClick={() => setShowEn((s) => !s)}
+          >
+            🇬🇧 {showEn ? 'français' : 'anglais'}
+          </button>
+        )}
+      </div>
 
       <div className="cards">
         {pageData.kind === 'multi' ? (
@@ -268,18 +281,43 @@ function ExercisePage({
           />
         ) : (
           items.map((ex) => (
-            <ExerciseCard
+            <SingleRow
               key={ex.id}
               ex={ex}
               number={NUM[ex.id]}
               value={inputs[ex.id] || ''}
               onChange={(v) => setInput(ex.id, v)}
               checked={pageChecked}
+              showEn={showEn}
               onEnter={onValidate}
             />
           ))
         )}
       </div>
+
+      {pageData.kind === 'single' && pageChecked && (
+        <div className="reminder multi-reminder set-correction">
+          <span className="reminder-label">
+            {showEn ? 'Corrections & rules:' : 'Corrigé & règles :'}
+          </span>
+          <ul>
+            {items.map((ex) => (
+              <li key={ex.id}>
+                <span className="corr-num">{NUM[ex.id]}.</span>{' '}
+                <em>{ex.verb}</em> — {showEn ? ex.ruleEn : ex.rule}
+                {ex.formation && (
+                  <div className="corr-formation">
+                    {showEn ? ex.formationEn : ex.formation}
+                  </div>
+                )}
+                <div className="multi-example">
+                  <RichText text={(showEn ? ex.examplesEn : ex.examples)[0]} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {!pageChecked ? (
         <button className="btn btn-primary sticky-validate" onClick={onValidate}>
@@ -400,9 +438,9 @@ function MultiCard({ items, inputs, setInput, checked, onEnter }) {
   )
 }
 
-function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
-  const [showVerbEn, setShowVerbEn] = useState(false)
-  const [showRuleEn, setShowRuleEn] = useState(false)
+// Exercice à une phrase, présenté comme le set 1 : numéro au début,
+// résultat en ligne (✅ / 🟠 réponse). Les règles sont regroupées en bas du set.
+function SingleRow({ ex, number, value, onChange, checked, showEn, onEnter }) {
   const right = checked && isCorrect(value, ex.answers)
 
   return (
@@ -415,6 +453,7 @@ function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
 
       <div className="sentence-row">
         <p className="sentence">
+          <span className="lead-num">{number}.</span>{' '}
           {ex.before}
           <span className={`blank-wrap ${checked ? (right ? 'ok' : 'ko') : ''}`}>
             <input
@@ -436,61 +475,82 @@ function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
             />
           </span>
           {ex.after}
-          <span className="ex-num-inline">{number}</span>
+          {checked && (
+            <span className="inline-result">
+              {right ? (
+                '✅'
+              ) : (
+                <>
+                  🟠 <strong>{ex.answers[0]}</strong>
+                </>
+              )}
+            </span>
+          )}
         </p>
         <div className="verb-inline">
           <em>({ex.verb})</em>
-          <button
-            type="button"
-            className="link-btn"
-            title="Traduire le verbe en anglais"
-            onClick={() => setShowVerbEn((s) => !s)}
-          >
-            🇬🇧
-          </button>
-          {showVerbEn && <span className="verb-en">{ex.verbEn}</span>}
+          {showEn && <span className="verb-en">{ex.verbEn}</span>}
         </div>
       </div>
-
-      {checked && (
-        <div className={`feedback ${right ? 'feedback-ok' : 'feedback-ko'}`}>
-          <div className="feedback-head">
-            {right ? '✅ Bravo, c’est exact ! 🎉' : '🟠 Pas tout à fait.'}
-          </div>
-          {!right && (
-            <div className="feedback-answer">
-              Réponse attendue : <strong>{ex.answers[0]}</strong>
-            </div>
-          )}
-          <div className="reminder">
-            <div className="reminder-rule">
-              <span className="reminder-label">Règle&nbsp;:</span>{' '}
-              {showRuleEn ? ex.ruleEn : ex.rule}
-            </div>
-            {ex.formation && (
-              <div className="reminder-formation">
-                {showRuleEn ? ex.formationEn : ex.formation}
-              </div>
-            )}
-            <div className="examples">
-              <span className="examples-label">
-                {showRuleEn ? 'Example:' : 'Exemple :'}
-              </span>
-              <div className="example-line">
-                <RichText text={(showRuleEn ? ex.examplesEn : ex.examples)[0]} />
-              </div>
-            </div>
-            <button
-              type="button"
-              className="link-btn"
-              onClick={() => setShowRuleEn((s) => !s)}
-            >
-              🇬🇧 {showRuleEn ? 'Revenir au français' : 'Traduire en anglais'}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
+  )
+}
+
+// Emblème (image SVG) correspondant à chaque niveau.
+function TierImage({ cls }) {
+  const svg = { width: 128, height: 128, viewBox: '0 0 132 132', className: 'tier-img' }
+  if (cls === 'tier-legende') {
+    return (
+      <svg {...svg} role="img" aria-label="Légende">
+        <circle cx="66" cy="66" r="62" fill="#fef9c3" stroke="#facc15" strokeWidth="3" />
+        <path d="M34 88 L28 48 L50 66 L66 38 L82 66 L104 48 L98 88 Z" fill="#facc15" stroke="#a16207" strokeWidth="3" strokeLinejoin="round" />
+        <rect x="34" y="88" width="64" height="12" rx="4" fill="#eab308" stroke="#a16207" strokeWidth="3" />
+        <circle cx="66" cy="52" r="6" fill="#ef4444" stroke="#a16207" strokeWidth="2" />
+        <circle cx="40" cy="70" r="4.5" fill="#3b82f6" stroke="#a16207" strokeWidth="2" />
+        <circle cx="92" cy="70" r="4.5" fill="#22c55e" stroke="#a16207" strokeWidth="2" />
+      </svg>
+    )
+  }
+  if (cls === 'tier-heros') {
+    return (
+      <svg {...svg} role="img" aria-label="Héros">
+        <circle cx="66" cy="66" r="62" fill="#fffbeb" stroke="#fde68a" strokeWidth="3" />
+        <path d="M66 30 L94 42 V70 C94 87 82 98 66 103 C50 98 38 87 38 70 V42 Z" fill="#f59e0b" stroke="#b45309" strokeWidth="3" strokeLinejoin="round" />
+        <path d="M66 48 l5.3 10.8 11.9 1.7 -8.6 8.4 2 11.8 -10.6 -5.6 -10.6 5.6 2 -11.8 -8.6 -8.4 11.9 -1.7 Z" fill="#fff" />
+      </svg>
+    )
+  }
+  if (cls === 'tier-champion') {
+    return (
+      <svg {...svg} role="img" aria-label="Champion">
+        <circle cx="66" cy="66" r="62" fill="#f5f3ff" stroke="#ddd6fe" strokeWidth="3" />
+        <path d="M50 30 L62 74 L54 74 Z" fill="#a78bfa" />
+        <path d="M82 30 L70 74 L78 74 Z" fill="#7c3aed" />
+        <circle cx="66" cy="84" r="24" fill="#fbbf24" stroke="#7c3aed" strokeWidth="3" />
+        <path d="M66 70 l4.3 8.8 9.7 1.4 -7 6.8 1.6 9.6 -8.6 -4.5 -8.6 4.5 1.6 -9.6 -7 -6.8 9.7 -1.4 Z" fill="#7c3aed" />
+      </svg>
+    )
+  }
+  if (cls === 'tier-aventurier') {
+    return (
+      <svg {...svg} role="img" aria-label="Aventurier">
+        <circle cx="66" cy="66" r="62" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="3" />
+        <circle cx="66" cy="66" r="42" fill="#fff" stroke="#1d4ed8" strokeWidth="4" />
+        <polygon points="66,30 75,66 66,58 57,66" fill="#ef4444" />
+        <polygon points="66,102 57,66 66,74 75,66" fill="#1d4ed8" />
+        <circle cx="66" cy="66" r="5" fill="#1d4ed8" />
+      </svg>
+    )
+  }
+  // Apprenti (défaut)
+  return (
+    <svg {...svg} role="img" aria-label="Apprenti">
+      <circle cx="66" cy="66" r="62" fill="#ecfdf3" stroke="#86efac" strokeWidth="3" />
+      <path d="M50 96 Q66 90 82 96" stroke="#a16207" strokeWidth="6" fill="none" strokeLinecap="round" />
+      <path d="M66 94 V58" stroke="#15803d" strokeWidth="5" strokeLinecap="round" />
+      <path d="M66 70 C64 56 50 50 40 54 C44 68 56 72 66 70 Z" fill="#22c55e" />
+      <path d="M66 62 C68 48 82 44 92 48 C88 62 76 66 66 62 Z" fill="#16a34a" />
+    </svg>
   )
 }
 
@@ -628,8 +688,10 @@ function Done({
 
   return (
     <div className="done">
-      <div className="badge tier-emoji">{tier.emoji}</div>
-      <h1 className={`tier-title ${tier.cls}`}>{tier.name}</h1>
+      <TierImage cls={tier.cls} />
+      <h1 className={`tier-title ${tier.cls}`}>
+        {tier.emoji} {tier.name}
+      </h1>
       <p className="lead">
         {name} —{' '}
         {outcome === 'finished'
