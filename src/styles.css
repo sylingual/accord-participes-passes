@@ -651,22 +651,62 @@ h1 {
   bottom: 12px;
 }
 
-/* Encouragement + actions de fin */
-.encourage {
-  background: #fff7ed;
-  border: 1.5px solid #fed7aa;
-  color: #9a3412;
+/* Thème héroïque : niveau (titre) + message selon le score */
+.tier-emoji {
+  font-size: 44px;
+}
+.tier-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 2px 0 6px;
+}
+.tier-message {
+  border: 1.5px solid;
   border-radius: 14px;
   padding: 14px 16px;
   font-size: 15.5px;
   line-height: 1.5;
   margin-bottom: 16px;
   text-align: left;
+  font-weight: 500;
 }
-.encourage-top {
-  background: var(--ok-bg);
-  border-color: var(--ok-line);
-  color: var(--ok);
+/* Couleurs par niveau */
+.tier-apprenti {
+  color: #15803d;
+}
+.tier-message.tier-apprenti {
+  background: #ecfdf3;
+  border-color: #a7f3d0;
+}
+.tier-aventurier {
+  color: #1d4ed8;
+}
+.tier-message.tier-aventurier {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+.tier-champion {
+  color: #6d28d9;
+}
+.tier-message.tier-champion {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+.tier-heros {
+  color: #b45309;
+}
+.tier-message.tier-heros {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+.tier-legende {
+  color: #a16207;
+}
+.tier-message.tier-legende {
+  background: linear-gradient(135deg, #fef9c3, #fde68a);
+  border-color: #facc15;
+  font-weight: 700;
 }
 .end-actions {
   display: flex;

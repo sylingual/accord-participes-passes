@@ -5,7 +5,6 @@ import { emailConfig, isEmailConfigured } from './emailConfig'
 
 const TOTAL = exercises.length
 const CHUNK = 5
-const PASS_THRESHOLD = 75 // % de réussite en dessous duquel on encourage
 
 // --- Construction des « sets » (pages) --------------------------------------
 // On regroupe les exercices par section (série), puis on découpe chaque série
@@ -475,13 +474,11 @@ function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
             )}
             <div className="examples">
               <span className="examples-label">
-                {showRuleEn ? 'Examples:' : 'Exemples :'}
+                {showRuleEn ? 'Example:' : 'Exemple :'}
               </span>
-              {(showRuleEn ? ex.examplesEn : ex.examples).map((s, i) => (
-                <div key={i} className="example-line">
-                  <RichText text={s} />
-                </div>
-              ))}
+              <div className="example-line">
+                <RichText text={(showRuleEn ? ex.examplesEn : ex.examples)[0]} />
+              </div>
             </div>
             <button
               type="button"
@@ -495,6 +492,53 @@ function ExerciseCard({ ex, number, value, onChange, checked, onEnter }) {
       )}
     </div>
   )
+}
+
+// Thème héroïque : le niveau (titre) dépend du pourcentage de réussite.
+function getTier(percent) {
+  if (percent >= 100) {
+    return {
+      name: 'Légende',
+      emoji: '🏆',
+      cls: 'tier-legende',
+      message:
+        '100 % ! Tu es une LÉGENDE ! Personne ne t’arrête : tu maîtrises vraiment l’accord des participes passés.',
+    }
+  }
+  if (percent >= 95) {
+    return {
+      name: 'Héros',
+      emoji: '🦸',
+      cls: 'tier-heros',
+      message:
+        'Impressionnant, tu es un vrai Héros ! Il te manque juste un souffle pour atteindre 100 % et devenir une Légende !',
+    }
+  }
+  if (percent >= 75) {
+    return {
+      name: 'Champion',
+      emoji: '🏅',
+      cls: 'tier-champion',
+      message:
+        'Wouah ! Quel Champion ! Oseras-tu refaire le test pour aller jusqu’à 100 % et devenir une Légende ?',
+    }
+  }
+  if (percent >= 50) {
+    return {
+      name: 'Aventurier',
+      emoji: '🧭',
+      cls: 'tier-aventurier',
+      message:
+        'Tu es un Aventurier ! Si tu refais encore le test, tu peux devenir encore meilleur… Sers-toi de tes fiches de grammaire.',
+    }
+  }
+  return {
+    name: 'Apprenti',
+    emoji: '🌱',
+    cls: 'tier-apprenti',
+    message:
+      'Tu es un Apprenti ! Refais le test pour monter de niveau ! Tu vas y arriver. Sers-toi de tes fiches de grammaire.',
+  }
 }
 
 function buildDetails(history) {
@@ -525,7 +569,7 @@ function Done({
     outcome === 'finished' ? 'Atelier terminé' : 'Arrêt anticipé'
   const details = buildDetails(history)
   const dateStr = new Date().toLocaleString('fr-FR')
-  const needsEncouragement = percent < PASS_THRESHOLD
+  const tier = getTier(percent)
   const sentOnceRef = useRef(false)
 
   function downloadResults() {
@@ -584,16 +628,13 @@ function Done({
 
   return (
     <div className="done">
-      <div className="badge">{outcome === 'finished' ? '🎉' : '👋'}</div>
-      <h1>
-        {outcome === 'finished'
-          ? `Félicitations, ${name} !`
-          : `À bientôt, ${name} !`}
-      </h1>
+      <div className="badge tier-emoji">{tier.emoji}</div>
+      <h1 className={`tier-title ${tier.cls}`}>{tier.name}</h1>
       <p className="lead">
+        {name} —{' '}
         {outcome === 'finished'
-          ? 'Tu as terminé tout l’atelier.'
-          : 'Tu as choisi de t’arrêter ici — c’est très bien.'}
+          ? 'tu as terminé tout l’atelier !'
+          : 'tu t’es arrêté ici, bravo pour ton travail.'}
       </p>
 
       <div className="scorebox">
@@ -603,19 +644,7 @@ function Done({
         </div>
       </div>
 
-      {needsEncouragement ? (
-        <div className="encourage">
-          💪 Ne te décourage pas&nbsp;! L’accord des participes passés, ça
-          s’apprend avec de l’entraînement. Reprends l’atelier : tu vas
-          progresser, c’est sûr&nbsp;!
-        </div>
-      ) : (
-        percent === 100 && (
-          <div className="encourage encourage-top">
-            🌟 Sans faute&nbsp;! Bravo, tu maîtrises vraiment bien.
-          </div>
-        )
-      )}
+      <div className={`tier-message ${tier.cls}`}>{tier.message}</div>
 
       <div className={`send-status send-${sendState}`}>
         {sendState === 'sending' && '📨 Envoi de tes résultats au professeur…'}
