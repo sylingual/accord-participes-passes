@@ -10,13 +10,13 @@
 
 export const emailConfig = {
   // 1) EmailJS → Account → General → "Public Key"
-  publicKey: 'VOTRE_PUBLIC_KEY',
+  publicKey: 'tl9RNv3AG9QZRrWBj',
 
   // 2) EmailJS → Email Services → l'ID du service (ex. "service_xxxxxxx")
-  serviceId: 'VOTRE_SERVICE_ID',
+  serviceId: 'service_no6bhrp',
 
   // 3) EmailJS → Email Templates → l'ID du modèle (ex. "template_xxxxxxx")
-  templateId: 'VOTRE_TEMPLATE_ID',
+  templateId: 'template_1kkcw62',
 }
 
 // L'adresse du professeur (le destinataire) se règle directement dans le
