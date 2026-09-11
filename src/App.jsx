@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import emailjs from '@emailjs/browser'
 import { exercises } from './exercises'
 import { emailConfig, isEmailConfigured } from './emailConfig'
@@ -496,61 +496,227 @@ function SingleRow({ ex, number, value, onChange, checked, showEn, onEnter }) {
   )
 }
 
-// Emblème (image SVG) correspondant à chaque niveau.
+// Médaillon « aquarelle / heroic fantasy » : fond dégradé, lavis flous,
+// texture papier, bords irréguliers façon pinceau (filtres SVG).
+function WcMedallion({ id, label, skyFrom, skyTo, border, bg, fg }) {
+  const cc = `${id}-cc`
+  const wc = `${id}-wc`
+  const wcb = `${id}-wcb`
+  const paper = `${id}-paper`
+  const sky = `${id}-sky`
+  return (
+    <svg viewBox="0 0 200 200" className="tier-img" role="img" aria-label={label}>
+      <defs>
+        <radialGradient id={sky} cx="50%" cy="30%" r="85%">
+          <stop offset="0%" stopColor={skyFrom} />
+          <stop offset="100%" stopColor={skyTo} />
+        </radialGradient>
+        <clipPath id={cc}>
+          <circle cx="100" cy="100" r="93" />
+        </clipPath>
+        <filter id={wc} x="-15%" y="-15%" width="130%" height="130%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="4" seed="9" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id={wcb} x="-25%" y="-25%" width="150%" height="150%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="4" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="8" xChannelSelector="R" yChannelSelector="G" result="d" />
+          <feGaussianBlur in="d" stdDeviation="2.6" />
+        </filter>
+        <filter id={paper} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" result="p" />
+          <feColorMatrix in="p" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0" />
+        </filter>
+      </defs>
+      <g clipPath={`url(#${cc})`}>
+        <rect x="0" y="0" width="200" height="200" fill={`url(#${sky})`} />
+        <g filter={`url(#${wcb})`}>{bg}</g>
+        <g filter={`url(#${wc})`}>{fg}</g>
+        <rect x="0" y="0" width="200" height="200" filter={`url(#${paper})`} />
+      </g>
+      <circle cx="100" cy="100" r="92" fill="none" stroke={border} strokeWidth="6" opacity="0.9" filter={`url(#${wc})`} />
+    </svg>
+  )
+}
+
+const STAR =
+  'M0 -22 L6.5 -7 L22 -6 L10 4 L14 20 L0 11 L-14 20 L-10 4 L-22 -6 L-6.5 -7 Z'
+
 function TierImage({ cls }) {
-  const svg = { width: 128, height: 128, viewBox: '0 0 132 132', className: 'tier-img' }
   if (cls === 'tier-legende') {
     return (
-      <svg {...svg} role="img" aria-label="Légende">
-        <circle cx="66" cy="66" r="62" fill="#fef9c3" stroke="#facc15" strokeWidth="3" />
-        <path d="M34 88 L28 48 L50 66 L66 38 L82 66 L104 48 L98 88 Z" fill="#facc15" stroke="#a16207" strokeWidth="3" strokeLinejoin="round" />
-        <rect x="34" y="88" width="64" height="12" rx="4" fill="#eab308" stroke="#a16207" strokeWidth="3" />
-        <circle cx="66" cy="52" r="6" fill="#ef4444" stroke="#a16207" strokeWidth="2" />
-        <circle cx="40" cy="70" r="4.5" fill="#3b82f6" stroke="#a16207" strokeWidth="2" />
-        <circle cx="92" cy="70" r="4.5" fill="#22c55e" stroke="#a16207" strokeWidth="2" />
-      </svg>
+      <WcMedallion
+        id="lg"
+        label="Légende"
+        skyFrom="#fffbeb"
+        skyTo="#f59e0b"
+        border="#a16207"
+        bg={
+          <>
+            <polygon points="100,20 84,120 116,120" fill="#fde68a" opacity="0.55" />
+            <polygon points="100,20 40,120 70,120" fill="#fef3c7" opacity="0.4" />
+            <polygon points="100,20 160,120 130,120" fill="#fef3c7" opacity="0.4" />
+            <path d="M-5 176 L44 118 L96 166 L140 112 L205 172 V210 H-5 Z" fill="#b45309" opacity="0.8" />
+            <path d="M-5 188 Q100 168 205 188 V210 H-5 Z" fill="#78350f" opacity="0.7" />
+          </>
+        }
+        fg={
+          <>
+            <path d="M54 142 L46 84 L78 112 L100 70 L122 112 L154 84 L146 142 Z" fill="#facc15" stroke="#a16207" strokeWidth="4" strokeLinejoin="round" />
+            <rect x="54" y="140" width="92" height="18" rx="5" fill="#eab308" stroke="#a16207" strokeWidth="4" />
+            <circle cx="100" cy="102" r="7" fill="#ef4444" stroke="#a16207" strokeWidth="2" />
+            <circle cx="70" cy="120" r="5" fill="#3b82f6" stroke="#a16207" strokeWidth="2" />
+            <circle cx="130" cy="120" r="5" fill="#22c55e" stroke="#a16207" strokeWidth="2" />
+            <circle cx="150" cy="56" r="4" fill="#fffbeb" />
+            <circle cx="52" cy="66" r="3" fill="#fffbeb" />
+          </>
+        }
+      />
     )
   }
   if (cls === 'tier-heros') {
     return (
-      <svg {...svg} role="img" aria-label="Héros">
-        <circle cx="66" cy="66" r="62" fill="#fffbeb" stroke="#fde68a" strokeWidth="3" />
-        <path d="M66 30 L94 42 V70 C94 87 82 98 66 103 C50 98 38 87 38 70 V42 Z" fill="#f59e0b" stroke="#b45309" strokeWidth="3" strokeLinejoin="round" />
-        <path d="M66 48 l5.3 10.8 11.9 1.7 -8.6 8.4 2 11.8 -10.6 -5.6 -10.6 5.6 2 -11.8 -8.6 -8.4 11.9 -1.7 Z" fill="#fff" />
-      </svg>
+      <WcMedallion
+        id="he"
+        label="Héros"
+        skyFrom="#fef3c7"
+        skyTo="#fb923c"
+        border="#b45309"
+        bg={
+          <>
+            <circle cx="100" cy="66" r="34" fill="#fde68a" opacity="0.85" />
+            <circle cx="100" cy="66" r="52" fill="#fbbf24" opacity="0.25" />
+            <path d="M-5 176 L48 128 L100 160 L152 124 L205 172 V210 H-5 Z" fill="#c2410c" opacity="0.85" />
+            <path d="M-5 190 Q100 172 205 190 V210 H-5 Z" fill="#7c2d12" opacity="0.7" />
+          </>
+        }
+        fg={
+          <>
+            <path d="M100 72 L140 88 V126 C140 152 120 168 100 176 C80 168 60 152 60 126 V88 Z" fill="#f59e0b" stroke="#b45309" strokeWidth="4" strokeLinejoin="round" />
+            <g transform="translate(100 122)" fill="#fffbeb">
+              <path d={STAR} />
+            </g>
+          </>
+        }
+      />
     )
   }
   if (cls === 'tier-champion') {
     return (
-      <svg {...svg} role="img" aria-label="Champion">
-        <circle cx="66" cy="66" r="62" fill="#f5f3ff" stroke="#ddd6fe" strokeWidth="3" />
-        <path d="M50 30 L62 74 L54 74 Z" fill="#a78bfa" />
-        <path d="M82 30 L70 74 L78 74 Z" fill="#7c3aed" />
-        <circle cx="66" cy="84" r="24" fill="#fbbf24" stroke="#7c3aed" strokeWidth="3" />
-        <path d="M66 70 l4.3 8.8 9.7 1.4 -7 6.8 1.6 9.6 -8.6 -4.5 -8.6 4.5 1.6 -9.6 -7 -6.8 9.7 -1.4 Z" fill="#7c3aed" />
-      </svg>
+      <WcMedallion
+        id="ch"
+        label="Champion"
+        skyFrom="#f5f3ff"
+        skyTo="#a78bfa"
+        border="#6d28d9"
+        bg={
+          <>
+            <polygon points="100,100 20,30 40,20" fill="#ede9fe" opacity="0.5" />
+            <polygon points="100,100 180,30 160,20" fill="#ede9fe" opacity="0.5" />
+            <path d="M-5 178 Q100 156 205 178 V210 H-5 Z" fill="#7c3aed" opacity="0.65" />
+          </>
+        }
+        fg={
+          <>
+            <path d="M60 150 C38 120 42 88 66 70" stroke="#16a34a" strokeWidth="7" fill="none" strokeLinecap="round" />
+            <path d="M140 150 C162 120 158 88 134 70" stroke="#15803d" strokeWidth="7" fill="none" strokeLinecap="round" />
+            <path d="M82 66 L96 112 L86 112 Z" fill="#a78bfa" />
+            <path d="M118 66 L104 112 L114 112 Z" fill="#7c3aed" />
+            <circle cx="100" cy="122" r="30" fill="#fbbf24" stroke="#7c3aed" strokeWidth="4" />
+            <circle cx="100" cy="122" r="30" fill="none" stroke="#fde68a" strokeWidth="2" />
+            <g transform="translate(100 122) scale(0.72)" fill="#7c3aed">
+              <path d={STAR} />
+            </g>
+          </>
+        }
+      />
     )
   }
   if (cls === 'tier-aventurier') {
     return (
-      <svg {...svg} role="img" aria-label="Aventurier">
-        <circle cx="66" cy="66" r="62" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="3" />
-        <circle cx="66" cy="66" r="42" fill="#fff" stroke="#1d4ed8" strokeWidth="4" />
-        <polygon points="66,30 75,66 66,58 57,66" fill="#ef4444" />
-        <polygon points="66,102 57,66 66,74 75,66" fill="#1d4ed8" />
-        <circle cx="66" cy="66" r="5" fill="#1d4ed8" />
-      </svg>
+      <WcMedallion
+        id="av"
+        label="Aventurier"
+        skyFrom="#eff6ff"
+        skyTo="#60a5fa"
+        border="#1d4ed8"
+        bg={
+          <>
+            <path d="M-5 172 L44 92 L86 150 L122 96 L172 164 L205 122 V210 H-5 Z" fill="#3b82f6" opacity="0.8" />
+            <path d="M44 92 L60 116 L28 116 Z" fill="#eff6ff" opacity="0.95" />
+            <path d="M122 96 L138 120 L106 120 Z" fill="#eff6ff" opacity="0.95" />
+            <path d="M-5 182 Q100 158 205 182 V210 H-5 Z" fill="#1e40af" opacity="0.7" />
+            <circle cx="150" cy="52" r="16" fill="#dbeafe" opacity="0.8" />
+          </>
+        }
+        fg={
+          <>
+            <circle cx="100" cy="120" r="35" fill="#fbfdff" opacity="0.94" stroke="#1d4ed8" strokeWidth="4" />
+            <circle cx="100" cy="120" r="35" fill="none" stroke="#93c5fd" strokeWidth="1.5" />
+            <polygon points="100,90 109,120 100,111 91,120" fill="#ef4444" />
+            <polygon points="100,150 91,120 100,129 109,120" fill="#1d4ed8" />
+            <circle cx="100" cy="120" r="5" fill="#1d4ed8" />
+          </>
+        }
+      />
     )
   }
   // Apprenti (défaut)
   return (
-    <svg {...svg} role="img" aria-label="Apprenti">
-      <circle cx="66" cy="66" r="62" fill="#ecfdf3" stroke="#86efac" strokeWidth="3" />
-      <path d="M50 96 Q66 90 82 96" stroke="#a16207" strokeWidth="6" fill="none" strokeLinecap="round" />
-      <path d="M66 94 V58" stroke="#15803d" strokeWidth="5" strokeLinecap="round" />
-      <path d="M66 70 C64 56 50 50 40 54 C44 68 56 72 66 70 Z" fill="#22c55e" />
-      <path d="M66 62 C68 48 82 44 92 48 C88 62 76 66 66 62 Z" fill="#16a34a" />
-    </svg>
+    <WcMedallion
+      id="ap"
+      label="Apprenti"
+      skyFrom="#fef9c3"
+      skyTo="#86efac"
+      border="#15803d"
+      bg={
+        <>
+          <circle cx="150" cy="58" r="24" fill="#fef08a" opacity="0.75" />
+          <path d="M-5 150 Q60 122 105 146 T205 150 V210 H-5 Z" fill="#86efac" opacity="0.85" />
+          <path d="M-5 170 Q70 142 130 166 T205 170 V210 H-5 Z" fill="#22c55e" opacity="0.75" />
+        </>
+      }
+      fg={
+        <>
+          <path d="M100 158 V104" stroke="#166534" strokeWidth="7" strokeLinecap="round" />
+          <path d="M100 120 C94 96 68 90 52 98 C60 122 82 128 100 120 Z" fill="#22c55e" />
+          <path d="M100 110 C106 86 132 80 148 88 C140 112 118 118 100 110 Z" fill="#16a34a" />
+          <circle cx="100" cy="150" r="9" fill="#fde68a" opacity="0.85" />
+          <circle cx="150" cy="50" r="4" fill="#fffbeb" />
+          <circle cx="60" cy="74" r="3" fill="#fffbeb" />
+        </>
+      }
+    />
+  )
+}
+
+// Échelle des niveaux (pour montrer où l'élève peut monter).
+const TIER_LADDER = [
+  { name: 'Apprenti', cls: 'tier-apprenti', range: '0–49 %', emoji: '🌱' },
+  { name: 'Aventurier', cls: 'tier-aventurier', range: '50–74 %', emoji: '🧭' },
+  { name: 'Champion', cls: 'tier-champion', range: '75–94 %', emoji: '🏅' },
+  { name: 'Héros', cls: 'tier-heros', range: '95–99 %', emoji: '🦸' },
+  { name: 'Légende', cls: 'tier-legende', range: '100 %', emoji: '👑' },
+]
+
+function TierLadder({ currentCls }) {
+  return (
+    <div className="tier-ladder" aria-label="Progression des niveaux">
+      {TIER_LADDER.map((t, i) => (
+        <Fragment key={t.cls}>
+          {i > 0 && <span className="tier-arrow">→</span>}
+          <div
+            className={`tier-step ${t.cls} ${
+              t.cls === currentCls ? 'current' : 'muted'
+            }`}
+          >
+            <span className="tier-step-emoji">{t.emoji}</span>
+            <span className="tier-step-name">{t.name}</span>
+            <span className="tier-step-range">{t.range}</span>
+          </div>
+        </Fragment>
+      ))}
+    </div>
   )
 }
 
@@ -707,6 +873,8 @@ function Done({
       </div>
 
       <div className={`tier-message ${tier.cls}`}>{tier.message}</div>
+
+      <TierLadder currentCls={tier.cls} />
 
       <div className={`send-status send-${sendState}`}>
         {sendState === 'sending' && '📨 Envoi de tes résultats au professeur…'}
