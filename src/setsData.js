@@ -370,6 +370,8 @@ export const SETS = [
       { url: 'https://www.ecolesuisse-fle.fr/jeux-de-grammaire-accord-du-participe-passe-quiz-progressif', title: 'Accord du participe passé — quiz progressif (École Suisse FLE)' },
       { url: 'https://www.lumni.fr/quiz/comment-accorder-le-participe-passe-employe-avec-etre-avoir', title: 'Accorder le participe passé avec être / avoir (Lumni)' },
       { url: 'https://lesparticipespasses.ccdmd.qc.ca/', title: 'Les participes passés — Mirza chez le vétérinaire (CCDMD)' },
+      { url: 'https://exercices.alloprof.qc.ca/app/client.php?demande=questionnaire_debuter&projet=11&questionnaire=126&evaluation=81&mode=', title: 'Choix de l’auxiliaire être / avoir (Alloprof)' },
+      { url: 'https://www.lefrancais.be/grammaire/participe-passe/participe-passe-ex1.html', title: 'L’accord du participe passé — exercice 1 (Le Français)' },
     ],
   },
 ]

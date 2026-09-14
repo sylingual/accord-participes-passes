@@ -13,16 +13,38 @@
  *   5. Autorise l'accès si demandé, puis copie l'URL (…/exec).
  *   6. Colle cette URL dans src/statsConfig.js (champ sheetsUrl).
  *
- * Chaque ligne : Horodatage · Élève · Set · Score · Réussite (%) · Niveau.
+ * Deux onglets alimentés automatiquement :
+ *   - « Résultats » : Horodatage · Élève · Set · Score · Réussite (%) · Niveau.
+ *   - « Réactions » : Horodatage · Élève · Exercice · Réaction (J'aime / pas aimé).
  */
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Résultats') || ss.getSheets()[0];
 
-    // En-têtes si la feuille est vide.
+    var data = {};
+    try {
+      data = JSON.parse(e.postData.contents);
+    } catch (err) {
+      data = {};
+    }
+
+    if (data.type === 'reaction') {
+      var rsheet = ss.getSheetByName('Réactions') || ss.insertSheet('Réactions');
+      if (rsheet.getLastRow() === 0) {
+        rsheet.appendRow(['Horodatage', 'Élève', 'Exercice', 'Réaction']);
+      }
+      rsheet.appendRow([
+        new Date(),
+        data.name || '',
+        data.link || '',
+        data.reaction || '',
+      ]);
+      return ContentService.createTextOutput('ok');
+    }
+
+    var sheet = ss.getSheetByName('Résultats') || ss.getSheets()[0];
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         'Horodatage',
@@ -33,14 +55,6 @@ function doPost(e) {
         'Niveau',
       ]);
     }
-
-    var data = {};
-    try {
-      data = JSON.parse(e.postData.contents);
-    } catch (err) {
-      data = {};
-    }
-
     sheet.appendRow([
       new Date(),
       data.name || '',

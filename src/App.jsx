@@ -86,6 +86,7 @@ export default function App() {
   const [name, setName] = useState('')
   const [scores, setScores] = useState({}) // { setId: {correct, answered, percent, grade, cls, date} }
   const [linkChecks, setLinkChecks] = useState({}) // { url: bool }
+  const [linkReactions, setLinkReactions] = useState({}) // { url: 'up' | 'down' }
   const [currentSetId, setCurrentSetId] = useState(null)
 
   function startSession(e) {
@@ -95,13 +96,31 @@ export default function App() {
     if (saved) {
       setScores(saved.scores || {})
       setLinkChecks(saved.linkChecks || {})
+      setLinkReactions(saved.linkReactions || {})
     }
     setPhase('menu')
   }
 
   useEffect(() => {
-    if (phase !== 'welcome' && name.trim()) saveState(name, { scores, linkChecks })
-  }, [scores, linkChecks, phase, name])
+    if (phase !== 'welcome' && name.trim())
+      saveState(name, { scores, linkChecks, linkReactions })
+  }, [scores, linkChecks, linkReactions, phase, name])
+
+  function reactLink(setTitle, link, reaction) {
+    setLinkReactions((r) => {
+      const next = r[link.url] === reaction ? '' : reaction // reclic = retire
+      logStat({
+        type: 'reaction',
+        name,
+        set: setTitle,
+        link: link.title,
+        url: link.url,
+        reaction: next === 'up' ? "J'aime" : next === 'down' ? "J'ai pas aimé" : '(retiré)',
+        date: new Date().toLocaleString('fr-FR'),
+      })
+      return { ...r, [link.url]: next }
+    })
+  }
 
   function recordScore(setId, correct, answered) {
     const percent = answered ? Math.round((correct / answered) * 100) : 0
@@ -143,9 +162,11 @@ export default function App() {
             set={currentSet}
             name={name}
             linkChecks={linkChecks}
+            linkReactions={linkReactions}
             onToggleLink={(url) =>
               setLinkChecks((l) => ({ ...l, [url]: !l[url] }))
             }
+            onReact={reactLink}
             onRecord={recordScore}
             onBack={() => setPhase('menu')}
           />
@@ -237,7 +258,16 @@ function Menu({ name, scores, linkChecks, onOpen }) {
 // ---------------------------------------------------------------------------
 // Vue d'un set (aiguillage)
 // ---------------------------------------------------------------------------
-function SetView({ set, name, linkChecks, onToggleLink, onRecord, onBack }) {
+function SetView({
+  set,
+  name,
+  linkChecks,
+  linkReactions,
+  onToggleLink,
+  onReact,
+  onRecord,
+  onBack,
+}) {
   return (
     <div className="setview">
       <button className="back-link" onClick={onBack}>
@@ -248,7 +278,13 @@ function SetView({ set, name, linkChecks, onToggleLink, onRecord, onBack }) {
         <h1 className="setview-title">{set.title}</h1>
       </div>
       {set.kind === 'links' ? (
-        <LinksView set={set} linkChecks={linkChecks} onToggle={onToggleLink} />
+        <LinksView
+          set={set}
+          linkChecks={linkChecks}
+          linkReactions={linkReactions}
+          onToggle={onToggleLink}
+          onReact={onReact}
+        />
       ) : (
         <ExerciseRunner set={set} name={name} onRecord={onRecord} onBack={onBack} />
       )}
@@ -256,26 +292,54 @@ function SetView({ set, name, linkChecks, onToggleLink, onRecord, onBack }) {
   )
 }
 
-function LinksView({ set, linkChecks, onToggle }) {
+function LinksView({ set, linkChecks, linkReactions, onToggle, onReact }) {
   return (
     <div className="links-view">
       <p className="links-intro">💡 {set.intro}</p>
       <ul className="links-list">
-        {set.links.map((l) => (
-          <li key={l.url} className={linkChecks[l.url] ? 'done' : ''}>
-            <label className="link-check">
-              <input
-                type="checkbox"
-                checked={!!linkChecks[l.url]}
-                onChange={() => onToggle(l.url)}
-              />
-              <span className="checkmark" aria-hidden="true" />
-            </label>
-            <a href={l.url} target="_blank" rel="noopener noreferrer">
-              {l.title} ↗
-            </a>
-          </li>
-        ))}
+        {set.links.map((l) => {
+          const reaction = linkReactions[l.url] || ''
+          return (
+            <li key={l.url} className={linkChecks[l.url] ? 'done' : ''}>
+              <label className="link-check">
+                <input
+                  type="checkbox"
+                  checked={!!linkChecks[l.url]}
+                  onChange={() => onToggle(l.url)}
+                />
+                <span className="checkmark" aria-hidden="true" />
+              </label>
+              <a
+                className="link-title"
+                href={l.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {l.title} ↗
+              </a>
+              <span className="link-react">
+                <button
+                  type="button"
+                  className={`react-btn ${reaction === 'up' ? 'on' : ''}`}
+                  title="J’aime"
+                  aria-label="J’aime"
+                  onClick={() => onReact(set.title, l, 'up')}
+                >
+                  👍
+                </button>
+                <button
+                  type="button"
+                  className={`react-btn ${reaction === 'down' ? 'on down' : ''}`}
+                  title="J’ai pas aimé"
+                  aria-label="J’ai pas aimé"
+                  onClick={() => onReact(set.title, l, 'down')}
+                >
+                  👎
+                </button>
+              </span>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

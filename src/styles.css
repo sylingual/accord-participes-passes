@@ -967,6 +967,43 @@ h1 {
 .links-list a:hover {
   text-decoration: underline;
 }
+.link-title {
+  flex: 1 1 auto;
+}
+.link-react {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 4px;
+}
+.react-btn {
+  border: 1.5px solid var(--line);
+  background: #fff;
+  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  filter: grayscale(0.6);
+  opacity: 0.7;
+  transition: transform 0.05s, filter 0.15s, opacity 0.15s, border-color 0.15s,
+    background 0.15s;
+}
+.react-btn:hover {
+  filter: none;
+  opacity: 1;
+  transform: scale(1.08);
+}
+.react-btn.on {
+  filter: none;
+  opacity: 1;
+  background: var(--ok-bg);
+  border-color: var(--ok);
+}
+.react-btn.on.down {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
 .link-check {
   flex: 0 0 auto;
   cursor: pointer;
