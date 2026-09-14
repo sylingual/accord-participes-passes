@@ -25,7 +25,7 @@ const check2Cards = [
   {
     kind: 'segmented',
     instruction:
-      'Exercice 1 — Choisis l’auxiliaire conjugué (est ou a) pour chaque verbe.',
+      'Exercice 1 : Choisis l’auxiliaire conjugué (est ou a) pour chaque verbe.',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -57,7 +57,7 @@ const check2Cards = [
   // Exo 3 : l'histoire de Camila, une ligne à la fois
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 — L’histoire de Camila. Choisis le bon auxiliaire.',
+    instruction: 'Exercice 3 : L’histoire de Camila. Choisis le bon auxiliaire.',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -315,7 +315,7 @@ export const SETS = [
     subtitle: 'Check 1 — choisir le bon temps',
     kind: 'links',
     intro:
-      'Fais ces quiz Lawless French en autonomie. Tu peux les refaire autant de fois que nécessaire — coche chaque quiz quand tu l’as fait !',
+      "Pour t'entraîner à différencier le passé composé de l'imparfait, fais ces quiz en autonomie. Tu peux les refaire autant de fois que nécessaire ! 😊",
     links: [
       { url: 'https://progress.lawlessfrench.com/kwiz/take/2581800', title: 'Conte de fées' },
       { url: 'https://progress.lawlessfrench.com/kwiz/take/1702841', title: 'Dimanche à Chartres' },
@@ -330,7 +330,7 @@ export const SETS = [
     num: 2,
     icon: '⚖️',
     title: 'Le bon auxiliaire (être ou avoir)',
-    subtitle: 'Check 2 — être ou avoir',
+    subtitle: 'Check 2 : être ou avoir',
     kind: 'exercises',
     paced: true,
     rewardVideo: 'ttw1KeiF9mA', // chanson récompense (niveau Légende)
@@ -341,7 +341,7 @@ export const SETS = [
     num: 3,
     icon: '✍️',
     title: 'Le bon participe passé',
-    subtitle: 'Check 3 — la bonne forme (-é / -i / -u)',
+    subtitle: 'Check 3 : la bonne forme (-é / -i / -u)',
     kind: 'exercises',
     rewardVideo: 'jhqJY0ll1Wo', // chanson récompense (niveau Légende)
     intro:
@@ -353,7 +353,7 @@ export const SETS = [
     num: 4,
     icon: '🎯',
     title: 'L’accord du participe passé',
-    subtitle: 'Check 4 — quand et comment accorder',
+    subtitle: 'Check 4 : quand et comment accorder',
     kind: 'exercises',
     rewardVideo: 'Z3f3H9EW53Y', // chanson récompense (niveau Légende)
     intro:
