@@ -312,7 +312,7 @@ export const SETS = [
     num: 1,
     icon: '🕰️',
     title: 'Passé composé ou imparfait ?',
-    subtitle: 'Check 1 — choisir le bon temps',
+    subtitle: 'Check 1 : choisir le bon temps',
     kind: 'links',
     intro:
       "Pour t'entraîner à différencier le passé composé de l'imparfait, fais ces quiz en autonomie. Tu peux les refaire autant de fois que nécessaire ! 😊",
