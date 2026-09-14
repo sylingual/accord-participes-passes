@@ -183,7 +183,10 @@ function Welcome({ name, setName, group, setGroup, onStart }) {
       <h1>Deviens une légende du passé composé !</h1>
       <p className="lead">
         Bienvenue à cet atelier <strong>autonome</strong> sur le passé composé. 
-        Plus tu t'entraînes, plus ça devient facile et automatique ! Pense à vérifier ton cours si ça t'aide. Sauras-tu arriver jusqu'au niveau Légende ? 
+        Plus tu t'entraînes, plus ça devient facile et automatique ! Pense à consulter ton cours si ça t'aide. Sauras-tu arriver jusqu'au niveau Légende ? 
+      </p>
+      <p className="lead">
+        (Attention : si tu quittes la fenêtre, tes données ne sont pas sauvegardées)
       </p>
       <label className="field">
         <span>Ton prénom + Nom (initiale) :</span>
