@@ -14,7 +14,7 @@
  *   6. Colle cette URL dans src/statsConfig.js (champ sheetsUrl).
  *
  * Deux onglets alimentés automatiquement :
- *   - « Résultats » : Horodatage · Élève · Set · Score · Réussite (%) · Niveau.
+ *   - « Résultats » : Horodatage · Élève · Groupe · Set · Score · Réussite (%) · Niveau.
  *   - « Réactions » : Exercice · 👍 J'aime · 👎 J'ai pas aimé  (COMPTEUR GLOBAL,
  *     sans nom d'élève — chaque exercice a sa ligne, les compteurs s'incrémentent).
  */
@@ -64,6 +64,7 @@ function doPost(e) {
       sheet.appendRow([
         'Horodatage',
         'Élève',
+        'Groupe',
         'Set',
         'Score',
         'Réussite (%)',
@@ -73,6 +74,7 @@ function doPost(e) {
     sheet.appendRow([
       new Date(),
       data.name || '',
+      data.group || '',
       data.set || '',
       data.score || '',
       data.percent != null ? data.percent + '%' : '',

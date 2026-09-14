@@ -84,25 +84,27 @@ function saveState(name, data) {
 export default function App() {
   const [phase, setPhase] = useState('welcome') // welcome | menu | set
   const [name, setName] = useState('')
+  const [group, setGroup] = useState('') // '1' | '2'
   const [scores, setScores] = useState({}) // { setId: {correct, answered, percent, grade, cls, date} }
   const [linkReactions, setLinkReactions] = useState({}) // { url: 'up' | 'down' }
   const [currentSetId, setCurrentSetId] = useState(null)
 
   function startSession(e) {
     e.preventDefault()
-    if (!name.trim()) return
+    if (!name.trim() || !group) return
     const saved = loadState(name)
     if (saved) {
       setScores(saved.scores || {})
       setLinkReactions(saved.linkReactions || {})
+      if (saved.group && !group) setGroup(saved.group)
     }
     setPhase('menu')
   }
 
   useEffect(() => {
     if (phase !== 'welcome' && name.trim())
-      saveState(name, { scores, linkReactions })
-  }, [scores, linkReactions, phase, name])
+      saveState(name, { scores, linkReactions, group })
+  }, [scores, linkReactions, group, phase, name])
 
   // Réaction 👍/👎 sur un lien : on n'enregistre PAS qui a cliqué, seulement
   // un compteur global (delta) par exercice dans le Google Sheet.
@@ -141,7 +143,13 @@ export default function App() {
     <div className="page">
       <div className="card">
         {phase === 'welcome' && (
-          <Welcome name={name} setName={setName} onStart={startSession} />
+          <Welcome
+            name={name}
+            setName={setName}
+            group={group}
+            setGroup={setGroup}
+            onStart={startSession}
+          />
         )}
         {phase === 'menu' && (
           <Menu
@@ -157,6 +165,7 @@ export default function App() {
           <SetView
             set={currentSet}
             name={name}
+            group={group}
             linkReactions={linkReactions}
             onReact={reactLink}
             onRecord={recordScore}
@@ -168,7 +177,7 @@ export default function App() {
   )
 }
 
-function Welcome({ name, setName, onStart }) {
+function Welcome({ name, setName, group, setGroup, onStart }) {
   return (
     <form onSubmit={onStart} className="welcome">
       <h1>L’accord des participes passés</h1>
@@ -188,7 +197,30 @@ function Welcome({ name, setName, onStart }) {
           maxLength={60}
         />
       </label>
-      <button type="submit" className="btn btn-primary" disabled={!name.trim()}>
+      <div className="field">
+        <span>Ton groupe :</span>
+        <div className="group-choice">
+          <button
+            type="button"
+            className={`group-btn ${group === '1' ? 'on' : ''}`}
+            onClick={() => setGroup('1')}
+          >
+            Groupe 1
+          </button>
+          <button
+            type="button"
+            className={`group-btn ${group === '2' ? 'on' : ''}`}
+            onClick={() => setGroup('2')}
+          >
+            Groupe 2
+          </button>
+        </div>
+      </div>
+      <button
+        type="submit"
+        className="btn btn-primary"
+        disabled={!name.trim() || !group}
+      >
         Commencer →
       </button>
     </form>
@@ -244,7 +276,7 @@ function Menu({ name, scores, onOpen }) {
 // ---------------------------------------------------------------------------
 // Vue d'un set (aiguillage)
 // ---------------------------------------------------------------------------
-function SetView({ set, name, linkReactions, onReact, onRecord, onBack }) {
+function SetView({ set, name, group, linkReactions, onReact, onRecord, onBack }) {
   return (
     <div className="setview">
       <button className="back-link" onClick={onBack}>
@@ -257,7 +289,13 @@ function SetView({ set, name, linkReactions, onReact, onRecord, onBack }) {
       {set.kind === 'links' ? (
         <LinksView set={set} linkReactions={linkReactions} onReact={onReact} />
       ) : (
-        <ExerciseRunner set={set} name={name} onRecord={onRecord} onBack={onBack} />
+        <ExerciseRunner
+          set={set}
+          name={name}
+          group={group}
+          onRecord={onRecord}
+          onBack={onBack}
+        />
       )}
     </div>
   )
@@ -314,7 +352,7 @@ function LinksView({ set, linkReactions, onReact }) {
 // ---------------------------------------------------------------------------
 // Moteur d'exercices (noté)
 // ---------------------------------------------------------------------------
-function ExerciseRunner({ set, name, onRecord, onBack }) {
+function ExerciseRunner({ set, name, group, onRecord, onBack }) {
   const cards = set.cards
   const paced = !!set.paced
   const [answers, setAnswers] = useState({})
@@ -342,6 +380,7 @@ function ExerciseRunner({ set, name, onRecord, onBack }) {
     return (
       <GradeScreen
         name={name}
+        group={group}
         set={set}
         answers={answers}
         onRecord={onRecord}
@@ -637,7 +676,7 @@ function SegmentedCard({ card, cardIdx, answers, setAnswer, checked, showEn }) {
 // ---------------------------------------------------------------------------
 // Écran de niveau (grade)
 // ---------------------------------------------------------------------------
-function GradeScreen({ name, set, answers, onRecord, onBack, onRetry }) {
+function GradeScreen({ name, group, set, answers, onRecord, onBack, onRetry }) {
   let correct = 0
   let answered = 0
   set.cards.forEach((card, ci) => {
@@ -659,6 +698,7 @@ function GradeScreen({ name, set, answers, onRecord, onBack, onRetry }) {
     onRecord(set.id, correct, answered)
     logStat({
       name,
+      group: group ? `Groupe ${group}` : '',
       setId: set.id,
       set: set.title,
       score: scoreStr,
