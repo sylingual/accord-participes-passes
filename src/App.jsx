@@ -1,7 +1,22 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import emailjs from '@emailjs/browser'
 import { SETS } from './setsData'
-import { emailConfig, isEmailConfigured } from './emailConfig'
+import { statsConfig, isStatsConfigured } from './statsConfig'
+
+// Enregistre une ligne de résultat dans le Google Sheet (fire-and-forget).
+function logStat(payload) {
+  if (!isStatsConfigured()) return
+  try {
+    fetch(statsConfig.sheetsUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {})
+  } catch {
+    /* ignore */
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Utilitaires
@@ -612,25 +627,17 @@ function GradeScreen({ name, set, answers, onRecord, onBack, onRetry }) {
     if (doneRef.current) return
     doneRef.current = true
     onRecord(set.id, correct, answered)
-    if (!isEmailConfigured()) return
-    emailjs
-      .send(
-        emailConfig.serviceId,
-        emailConfig.templateId,
-        {
-          student_name: name,
-          score: scoreStr,
-          correct: String(correct),
-          answered: String(answered),
-          total: String(answered),
-          percent: `${percent}%`,
-          outcome: `Set « ${set.title} » — niveau ${tier.name}`,
-          date: dateStr,
-          details: `Set : ${set.title}\nScore : ${scoreStr} (${percent}%)\nNiveau : ${tier.name}`,
-        },
-        { publicKey: emailConfig.publicKey }
-      )
-      .catch((err) => console.error('EmailJS :', err))
+    logStat({
+      name,
+      setId: set.id,
+      set: set.title,
+      score: scoreStr,
+      correct,
+      answered,
+      percent,
+      grade: tier.name,
+      date: dateStr,
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
