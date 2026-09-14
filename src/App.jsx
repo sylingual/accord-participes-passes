@@ -1,53 +1,16 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import emailjs from '@emailjs/browser'
-import { exercises } from './exercises'
+import { SETS } from './setsData'
 import { emailConfig, isEmailConfigured } from './emailConfig'
 
-const TOTAL = exercises.length
-const CHUNK = 5
-
-// --- Construction des « sets » (pages) --------------------------------------
-// On regroupe les exercices par section (série), puis on découpe chaque série
-// en morceaux de 5 max. La série 1 (« pp-forms ») devient une seule carte
-// factorisée. Chaque set porte un titre unique, affiché en haut.
-const SECTIONS = []
-for (const ex of exercises) {
-  const last = SECTIONS[SECTIONS.length - 1]
-  if (!last || last.section !== ex.section) {
-    SECTIONS.push({ section: ex.section, group: ex.group, items: [ex] })
-  } else {
-    last.items.push(ex)
-  }
-}
-const PAGES = []
-for (const sec of SECTIONS) {
-  if (sec.group === 'pp-forms') {
-    PAGES.push({ kind: 'multi', section: sec.section, items: sec.items })
-  } else {
-    for (let i = 0; i < sec.items.length; i += CHUNK) {
-      PAGES.push({
-        kind: 'single',
-        section: sec.section,
-        items: sec.items.slice(i, i + CHUNK),
-      })
-    }
-  }
-}
-const PAGE_COUNT = PAGES.length
-
-// Numéro d'affichage = position dans la liste (continue 1..N, indépendante des id).
-const NUM = {}
-exercises.forEach((ex, i) => {
-  NUM[ex.id] = i + 1
-})
-
-// Normalise une réponse pour une comparaison SOUPLE :
-// minuscules, accents ignorés, ponctuation et espaces superflus retirés.
+// ---------------------------------------------------------------------------
+// Utilitaires
+// ---------------------------------------------------------------------------
 function normalize(str) {
   return (str || '')
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // enlève les accents
+    .replace(/[̀-ͯ]/g, '')
     .replace(/[.,;:!?«»"'’()[\]]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
@@ -55,13 +18,11 @@ function normalize(str) {
 
 function isCorrect(input, answers) {
   const n = normalize(input)
-  if (!n) return false
   return answers.some((a) => normalize(a) === n)
 }
 
-// Rend un texte où **mot** devient <strong>mot</strong>.
 function RichText({ text }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  const parts = (text || '').split(/(\*\*[^*]+\*\*)/g)
   return (
     <>
       {parts.map((p, i) =>
@@ -75,78 +36,75 @@ function RichText({ text }) {
   )
 }
 
-export default function App() {
-  const [phase, setPhase] = useState('welcome') // welcome | exercise | done
-  const [name, setName] = useState('')
-  const [pageIndex, setPageIndex] = useState(0)
-  const [inputs, setInputs] = useState({}) // { [id]: string }
-  const [pageChecked, setPageChecked] = useState(false)
-  const [history, setHistory] = useState([]) // { id, verb, prompt, given, expected, correct }
-  const [outcome, setOutcome] = useState('') // finished | stopped
-  const [sendState, setSendState] = useState('idle')
+function blanksOf(card) {
+  if (card.kind === 'verbs') return card.items.map((it) => ({ answers: it.answers }))
+  if (card.kind === 'sentence') return [{ answers: card.answers }]
+  if (card.kind === 'segmented')
+    return card.segments
+      .filter((s) => typeof s === 'object')
+      .map((s) => ({ answers: [s.a] }))
+  return []
+}
 
-  const pageData = PAGES[pageIndex]
-  const isLastPage = pageIndex === PAGE_COUNT - 1
-  const correctCount = history.filter((h) => h.correct).length
+const storeKey = (name) => 'pp-atelier:' + name.trim().toLowerCase()
+function loadState(name) {
+  try {
+    const raw = localStorage.getItem(storeKey(name))
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+function saveState(name, data) {
+  try {
+    localStorage.setItem(storeKey(name), JSON.stringify(data))
+  } catch {
+    /* ignore */
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Application
+// ---------------------------------------------------------------------------
+export default function App() {
+  const [phase, setPhase] = useState('welcome') // welcome | menu | set
+  const [name, setName] = useState('')
+  const [scores, setScores] = useState({}) // { setId: {correct, answered, percent, grade, cls, date} }
+  const [linkChecks, setLinkChecks] = useState({}) // { url: bool }
+  const [currentSetId, setCurrentSetId] = useState(null)
 
   function startSession(e) {
     e.preventDefault()
     if (!name.trim()) return
-    setPhase('exercise')
+    const saved = loadState(name)
+    if (saved) {
+      setScores(saved.scores || {})
+      setLinkChecks(saved.linkChecks || {})
+    }
+    setPhase('menu')
   }
 
-  function setInput(id, value) {
-    setInputs((prev) => ({ ...prev, [id]: value }))
+  useEffect(() => {
+    if (phase !== 'welcome' && name.trim()) saveState(name, { scores, linkChecks })
+  }, [scores, linkChecks, phase, name])
+
+  function recordScore(setId, correct, answered) {
+    const percent = answered ? Math.round((correct / answered) * 100) : 0
+    const t = getTier(percent)
+    setScores((s) => ({
+      ...s,
+      [setId]: {
+        correct,
+        answered,
+        percent,
+        grade: t.name,
+        cls: t.cls,
+        date: new Date().toLocaleDateString('fr-FR'),
+      },
+    }))
   }
 
-  function validatePage() {
-    if (pageChecked) return
-    const rows = pageData.items.map((ex) => {
-      const given = (inputs[ex.id] || '').trim()
-      return {
-        id: ex.id,
-        verb: ex.verb,
-        prompt: `${ex.before || ''}____${ex.after || ''}`.trim(),
-        given,
-        expected: ex.answers[0],
-        correct: isCorrect(given, ex.answers),
-      }
-    })
-    setHistory((h) => [...h, ...rows])
-    setPageChecked(true)
-  }
-
-  function nextPage() {
-    setPageIndex((p) => p + 1)
-    setPageChecked(false)
-  }
-
-  // Recommence UNIQUEMENT le set en cours (efface ses réponses + son score).
-  function restartSet() {
-    setInputs((prev) => {
-      const next = { ...prev }
-      pageData.items.forEach((ex) => delete next[ex.id])
-      return next
-    })
-    setHistory((h) => h.slice(0, Math.max(0, h.length - pageData.items.length)))
-    setPageChecked(false)
-  }
-
-  function finish(reason) {
-    setOutcome(reason)
-    setPhase('done')
-  }
-
-  // Recommence tout l'atelier (depuis le premier set), en gardant le prénom.
-  function restartAll() {
-    setPageIndex(0)
-    setInputs({})
-    setPageChecked(false)
-    setHistory([])
-    setOutcome('')
-    setSendState('idle')
-    setPhase('exercise')
-  }
+  const currentSet = SETS.find((s) => s.id === currentSetId)
 
   return (
     <div className="page">
@@ -154,33 +112,27 @@ export default function App() {
         {phase === 'welcome' && (
           <Welcome name={name} setName={setName} onStart={startSession} />
         )}
-
-        {phase === 'exercise' && (
-          <ExercisePage
-            key={pageIndex}
-            pageData={pageData}
-            pageIndex={pageIndex}
-            inputs={inputs}
-            setInput={setInput}
-            pageChecked={pageChecked}
-            isLastPage={isLastPage}
-            onValidate={validatePage}
-            onNext={nextPage}
-            onStop={() => finish('stopped')}
-            onFinishAll={() => finish('finished')}
-            onRestartSet={restartSet}
+        {phase === 'menu' && (
+          <Menu
+            name={name}
+            scores={scores}
+            linkChecks={linkChecks}
+            onOpen={(id) => {
+              setCurrentSetId(id)
+              setPhase('set')
+            }}
           />
         )}
-
-        {phase === 'done' && (
-          <Done
+        {phase === 'set' && currentSet && (
+          <SetView
+            set={currentSet}
             name={name}
-            outcome={outcome}
-            history={history}
-            correctCount={correctCount}
-            sendState={sendState}
-            setSendState={setSendState}
-            onRestart={restartAll}
+            linkChecks={linkChecks}
+            onToggleLink={(url) =>
+              setLinkChecks((l) => ({ ...l, [url]: !l[url] }))
+            }
+            onRecord={recordScore}
+            onBack={() => setPhase('menu')}
           />
         )}
       </div>
@@ -193,12 +145,12 @@ function Welcome({ name, setName, onStart }) {
     <form onSubmit={onStart} className="welcome">
       <h1>L’accord des participes passés</h1>
       <p className="lead">
-        Un atelier <strong>en autonomie</strong>, set par set. À chaque
-        validation, la règle te sera rappelée. Tu avances à ton rythme et tu
-        décides quand t’arrêter.
+        Un atelier <strong>en autonomie</strong> en 5 sets. Écris ton prénom,
+        puis choisis le set où tu veux t’entraîner. Chaque set te donne un
+        <strong> niveau</strong> (Apprenti → Légende) !
       </p>
       <label className="field">
-        <span>Avant de commencer, écris ton prénom :</span>
+        <span>Ton prénom :</span>
         <input
           type="text"
           value={name}
@@ -209,194 +161,316 @@ function Welcome({ name, setName, onStart }) {
         />
       </label>
       <button type="submit" className="btn btn-primary" disabled={!name.trim()}>
-        Commencer l’atelier →
+        Commencer →
       </button>
     </form>
   )
 }
 
-function ExercisePage({
-  pageData,
-  pageIndex,
-  inputs,
-  setInput,
-  pageChecked,
-  isLastPage,
-  onValidate,
-  onNext,
-  onStop,
-  onFinishAll,
-  onRestartSet,
-}) {
-  const items = pageData.items
-  const firstNum = NUM[items[0].id]
-  const lastNum = NUM[items[items.length - 1].id]
-  const doneUnits = pageChecked ? lastNum : firstNum - 1
-  const progress = Math.round((doneUnits / TOTAL) * 100)
-  const topRef = useRef(null)
-  const [showEn, setShowEn] = useState(false)
-
-  // Remonte tout en haut à chaque changement de set ET à la validation
-  // (pour relire les corrections depuis le premier exercice).
-  useEffect(() => {
-    if (topRef.current) topRef.current.scrollIntoView({ block: 'start' })
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
-  }, [pageIndex, pageChecked])
-
+// ---------------------------------------------------------------------------
+// Menu des sets
+// ---------------------------------------------------------------------------
+function Menu({ name, scores, linkChecks, onOpen }) {
   return (
-    <div className="exercise-page" ref={topRef}>
-      <div className="progress" aria-hidden="true">
-        <div className="progress-bar" style={{ width: `${progress}%` }} />
-      </div>
-      <div className="topline">
-        <span className="counter">
-          Exercices {firstNum}–{lastNum} / {TOTAL}
-        </span>
-        <span className="section-tag">
-          Set {pageIndex + 1} / {PAGE_COUNT}
-        </span>
-      </div>
-
-      <div className="set-header">
-        <h2 className="set-title">{pageData.section}</h2>
-        {pageData.kind === 'single' && (
-          <button
-            type="button"
-            className="link-btn set-lang"
-            onClick={() => setShowEn((s) => !s)}
-          >
-            🇬🇧 {showEn ? 'français' : 'anglais'}
-          </button>
-        )}
-      </div>
-
-      <div className="cards">
-        {pageData.kind === 'multi' ? (
-          <MultiCard
-            items={items}
-            inputs={inputs}
-            setInput={setInput}
-            checked={pageChecked}
-            onEnter={onValidate}
-          />
-        ) : (
-          items.map((ex) => (
-            <SingleRow
-              key={ex.id}
-              ex={ex}
-              number={NUM[ex.id]}
-              value={inputs[ex.id] || ''}
-              onChange={(v) => setInput(ex.id, v)}
-              checked={pageChecked}
-              showEn={showEn}
-              onEnter={onValidate}
-            />
-          ))
-        )}
-      </div>
-
-      {pageData.kind === 'single' && pageChecked && (
-        <div className="reminder multi-reminder set-correction">
-          <span className="reminder-label">
-            {showEn ? 'Corrections & rules:' : 'Corrigé & règles :'}
-          </span>
-          <ul>
-            {items.map((ex) => (
-              <li key={ex.id}>
-                <span className="corr-num">{NUM[ex.id]}.</span>{' '}
-                <em>{ex.verb}</em> — {showEn ? ex.ruleEn : ex.rule}
-                {ex.formation && (
-                  <div className="corr-formation">
-                    {showEn ? ex.formationEn : ex.formation}
-                  </div>
+    <div className="menu">
+      <h1 className="menu-title">Bonjour {name} 👋</h1>
+      <p className="lead">Choisis un set d’exercices :</p>
+      <div className="set-list">
+        {SETS.map((set) => {
+          const sc = scores[set.id]
+          const linkDone =
+            set.kind === 'links'
+              ? set.links.filter((l) => linkChecks[l.url]).length
+              : 0
+          return (
+            <button
+              key={set.id}
+              className="set-item"
+              onClick={() => onOpen(set.id)}
+            >
+              <span className="set-item-icon">{set.icon}</span>
+              <span className="set-item-main">
+                <span className="set-item-title">
+                  {set.num}. {set.title}
+                </span>
+                <span className="set-item-sub">{set.subtitle}</span>
+              </span>
+              <span className="set-item-badge">
+                {set.kind === 'links' ? (
+                  <span className="badge-links">
+                    {linkDone}/{set.links.length} ✔
+                  </span>
+                ) : sc ? (
+                  <span className={`badge-grade ${sc.cls}`}>
+                    {sc.grade}
+                    <small>
+                      {sc.correct}/{sc.answered}
+                    </small>
+                  </span>
+                ) : (
+                  <span className="badge-todo">à faire →</span>
                 )}
-                <div className="multi-example">
-                  <RichText text={(showEn ? ex.examplesEn : ex.examples)[0]} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {!pageChecked ? (
-        <button className="btn btn-primary sticky-validate" onClick={onValidate}>
-          Valider mes réponses
-        </button>
-      ) : (
-        <div className="choices">
-          {isLastPage ? (
-            <button className="btn btn-finish" onClick={onFinishAll}>
-              🎉 J’ai tout fini&nbsp;!
+              </span>
             </button>
-          ) : (
-            <>
-              <button className="btn btn-continue" onClick={onNext}>
-                Je veux des exercices en plus.
-              </button>
-              <button className="btn btn-stop" onClick={onStop}>
-                C’est trop facile pour moi, je m’arrête là.
-              </button>
-              <button className="btn btn-restart-inline" onClick={onRestartSet}>
-                🔁 Recommencer ce set
-              </button>
-            </>
-          )}
-        </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Vue d'un set (aiguillage)
+// ---------------------------------------------------------------------------
+function SetView({ set, name, linkChecks, onToggleLink, onRecord, onBack }) {
+  return (
+    <div className="setview">
+      <button className="back-link" onClick={onBack}>
+        ← Menu
+      </button>
+      <div className="setview-head">
+        <span className="setview-icon">{set.icon}</span>
+        <h1 className="setview-title">{set.title}</h1>
+      </div>
+      {set.kind === 'links' ? (
+        <LinksView set={set} linkChecks={linkChecks} onToggle={onToggleLink} />
+      ) : (
+        <ExerciseRunner set={set} name={name} onRecord={onRecord} onBack={onBack} />
       )}
     </div>
   )
 }
 
-// Carte factorisée : plusieurs verbes, un seul intitulé.
-function MultiCard({ items, inputs, setInput, checked, onEnter }) {
-  const [showEn, setShowEn] = useState(false)
+function LinksView({ set, linkChecks, onToggle }) {
   return (
-    <div className="ex-card multi-card">
-      <div className="multi-top">
-        <p className="multi-instruction">
-          Indique les participes passés{' '}
-          <em>(forme du masculin singulier)</em> :
-        </p>
+    <div className="links-view">
+      <p className="links-intro">💡 {set.intro}</p>
+      <ul className="links-list">
+        {set.links.map((l) => (
+          <li key={l.url} className={linkChecks[l.url] ? 'done' : ''}>
+            <label className="link-check">
+              <input
+                type="checkbox"
+                checked={!!linkChecks[l.url]}
+                onChange={() => onToggle(l.url)}
+              />
+              <span className="checkmark" aria-hidden="true" />
+            </label>
+            <a href={l.url} target="_blank" rel="noopener noreferrer">
+              {l.title} ↗
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Moteur d'exercices (noté)
+// ---------------------------------------------------------------------------
+function ExerciseRunner({ set, name, onRecord, onBack }) {
+  const cards = set.cards
+  const paced = !!set.paced
+  const [answers, setAnswers] = useState({})
+  const [showEn, setShowEn] = useState(false)
+  const [checkedUpto, setCheckedUpto] = useState(0) // paced : nb de cartes validées
+  const [nonPacedChecked, setNonPacedChecked] = useState(false)
+  const [graded, setGraded] = useState(false)
+  const topRef = useRef(null)
+
+  const setAnswer = (k, v) => setAnswers((a) => ({ ...a, [k]: v }))
+
+  function computeScore() {
+    let correct = 0
+    let total = 0
+    cards.forEach((card, ci) => {
+      blanksOf(card).forEach((bl, bi) => {
+        total++
+        if (isCorrect(answers[`${ci}:${bi}`] || '', bl.answers)) correct++
+      })
+    })
+    return { correct, total }
+  }
+
+  useEffect(() => {
+    if (topRef.current) topRef.current.scrollIntoView({ block: 'start' })
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+  }, [checkedUpto, nonPacedChecked, graded])
+
+  if (graded) {
+    const { correct, total } = computeScore()
+    return (
+      <GradeScreen
+        name={name}
+        set={set}
+        correct={correct}
+        answered={total}
+        onRecord={onRecord}
+        onBack={onBack}
+        onRetry={() => {
+          setAnswers({})
+          setCheckedUpto(0)
+          setNonPacedChecked(false)
+          setGraded(false)
+        }}
+      />
+    )
+  }
+
+  // -------- déroulé paced (une carte à la fois) ----------------------------
+  if (paced) {
+    const activeIndex = checkedUpto // carte active (non encore validée)
+    const allDone = checkedUpto >= cards.length
+    return (
+      <div ref={topRef}>
+        <ProgressBar value={checkedUpto} total={cards.length} />
+        <div className="cards">
+          {cards.slice(0, checkedUpto + 1).map((card, ci) => (
+            <CardView
+              key={ci}
+              card={card}
+              cardIdx={ci}
+              number={ci + 1}
+              answers={answers}
+              setAnswer={setAnswer}
+              checked={ci < checkedUpto}
+              showEn={showEn}
+            />
+          ))}
+        </div>
+        {allDone ? (
+          <button className="btn btn-finish" onClick={() => setGraded(true)}>
+            🏅 Voir mon niveau
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary sticky-validate"
+            onClick={() => setCheckedUpto((c) => c + 1)}
+          >
+            Valider {activeIndex > 0 ? 'et continuer' : 'ma réponse'}
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // -------- déroulé non paced (tout d'un coup) -----------------------------
+  const sentenceCards = cards
+    .map((c, i) => ({ c, i }))
+    .filter((x) => x.c.kind === 'sentence' && x.c.rule)
+  return (
+    <div ref={topRef}>
+      {set.intro && <p className="links-intro">💡 {set.intro}</p>}
+      <div className="set-header set-header-tools">
         <button
           type="button"
-          className="link-btn"
+          className="link-btn set-lang"
           onClick={() => setShowEn((s) => !s)}
         >
           🇬🇧 {showEn ? 'français' : 'anglais'}
         </button>
       </div>
+      <div className="cards">
+        {cards.map((card, ci) => (
+          <CardView
+            key={ci}
+            card={card}
+            cardIdx={ci}
+            number={ci + 1}
+            answers={answers}
+            setAnswer={setAnswer}
+            checked={nonPacedChecked}
+            showEn={showEn}
+          />
+        ))}
+      </div>
+      {!nonPacedChecked ? (
+        <button
+          className="btn btn-primary sticky-validate"
+          onClick={() => setNonPacedChecked(true)}
+        >
+          Valider mes réponses
+        </button>
+      ) : (
+        <>
+          {sentenceCards.length > 0 && (
+            <div className="reminder multi-reminder set-correction">
+              <span className="reminder-label">
+                {showEn ? 'Corrections & rules:' : 'Corrigé & règles :'}
+              </span>
+              <ul>
+                {sentenceCards.map(({ c, i }) => (
+                  <li key={i}>
+                    <span className="corr-num">{i + 1}.</span>{' '}
+                    {showEn ? c.ruleEn : c.rule}
+                    <div className="multi-example">
+                      <RichText text={showEn ? c.exampleEn : c.example} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <button className="btn btn-finish" onClick={() => setGraded(true)}>
+            🏅 Voir mon niveau
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
 
+function ProgressBar({ value, total }) {
+  const pct = Math.round((value / total) * 100)
+  return (
+    <div className="topline-paced">
+      <div className="progress">
+        <div className="progress-bar" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="counter">
+        {Math.min(value + 1, total)} / {total}
+      </span>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Cartes
+// ---------------------------------------------------------------------------
+function CardView(props) {
+  const { card } = props
+  if (card.kind === 'verbs') return <VerbsCard {...props} />
+  if (card.kind === 'sentence') return <SentenceCard {...props} />
+  return <SegmentedCard {...props} />
+}
+
+function VerbsCard({ card, cardIdx, answers, setAnswer, checked, showEn }) {
+  return (
+    <div className="ex-card">
       <div className="verb-list">
-        {items.map((ex, i) => {
-          const val = inputs[ex.id] || ''
-          const right = checked && isCorrect(val, ex.answers)
+        {card.items.map((it, i) => {
+          const key = `${cardIdx}:${i}`
+          const val = answers[key] || ''
+          const right = checked && isCorrect(val, it.answers)
           return (
             <div
-              key={ex.id}
+              key={i}
               className={`verb-row ${checked ? (right ? 'ok' : 'ko') : ''}`}
             >
               <span className="verb-num">{i + 1}.</span>
               <span className="verb-inf">
-                <em>{ex.verb}</em>
-                {showEn && <span className="verb-en"> ({ex.verbEn})</span>}
+                <em>{it.verb}</em>
+                {showEn && <span className="verb-en"> ({it.verbEn})</span>}
               </span>
               <span className="arrow">→</span>
               <span className={`blank-wrap ${checked ? (right ? 'ok' : 'ko') : ''}`}>
                 <input
                   className="blank blank-sm"
-                  type="text"
                   value={val}
                   disabled={checked}
-                  onChange={(e) => setInput(ex.id, e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      if (!checked) onEnter()
-                    }
-                  }}
+                  onChange={(e) => setAnswer(key, e.target.value)}
                   placeholder="…"
-                  aria-label={`Participe passé de ${ex.verb}`}
                   autoComplete="off"
                   spellCheck={false}
                 />
@@ -407,7 +481,7 @@ function MultiCard({ items, inputs, setInput, checked, onEnter }) {
                     '✅'
                   ) : (
                     <>
-                      🟠 <strong>{ex.answers[0]}</strong>
+                      🟠 <strong>{it.answers[0]}</strong>
                     </>
                   )}
                 </span>
@@ -416,18 +490,17 @@ function MultiCard({ items, inputs, setInput, checked, onEnter }) {
           )
         })}
       </div>
-
       {checked && (
         <div className="reminder multi-reminder">
           <span className="reminder-label">
             {showEn ? 'Formation rules:' : 'Règles de formation :'}
           </span>
           <ul>
-            {items.map((ex) => (
-              <li key={ex.id}>
-                <em>{ex.verb}</em> — {showEn ? ex.ruleEn : ex.rule}
+            {card.items.map((it, i) => (
+              <li key={i}>
+                <em>{it.verb}</em> — {showEn ? it.ruleEn : it.rule}
                 <div className="multi-example">
-                  <RichText text={(showEn ? ex.examplesEn : ex.examples)[0]} />
+                  <RichText text={showEn ? it.exampleEn : it.example} />
                 </div>
               </li>
             ))}
@@ -438,66 +511,174 @@ function MultiCard({ items, inputs, setInput, checked, onEnter }) {
   )
 }
 
-// Exercice à une phrase, présenté comme le set 1 : numéro au début,
-// résultat en ligne (✅ / 🟠 réponse). Les règles sont regroupées en bas du set.
-function SingleRow({ ex, number, value, onChange, checked, showEn, onEnter }) {
-  const right = checked && isCorrect(value, ex.answers)
-
+function SentenceCard({ card, cardIdx, number, answers, setAnswer, checked }) {
+  const key = `${cardIdx}:0`
+  const val = answers[key] || ''
+  const right = checked && isCorrect(val, card.answers)
+  const expected = card.answers[0] === '' ? '(rien)' : card.answers[0]
   return (
     <div
       className={`ex-card compact ${
         checked ? (right ? 'card-ok' : 'card-ko') : ''
       }`}
     >
-      {ex.context && <div className="context">{ex.context}</div>}
-
-      <div className="sentence-row">
-        <p className="sentence">
-          <span className="lead-num">{number}.</span>{' '}
-          {ex.before}
-          <span className={`blank-wrap ${checked ? (right ? 'ok' : 'ko') : ''}`}>
-            <input
-              className="blank"
-              type="text"
-              value={value}
-              disabled={checked}
-              onChange={(e) => onChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  if (!checked) onEnter()
-                }
-              }}
-              placeholder="…"
-              aria-label={`Réponse pour l’exercice ${number}`}
-              autoComplete="off"
-              spellCheck={false}
-            />
+      <p className="sentence">
+        <span className="lead-num">{number}.</span> {card.before}
+        <span className={`blank-wrap suffix ${checked ? (right ? 'ok' : 'ko') : ''}`}>
+          <input
+            className="blank blank-suffix"
+            value={val}
+            disabled={checked}
+            onChange={(e) => setAnswer(key, e.target.value)}
+            placeholder={card.hint || '…'}
+            aria-label="terminaison de l’accord"
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </span>
+        {card.after}
+        {checked && (
+          <span className="inline-result">
+            {right ? (
+              '✅'
+            ) : (
+              <>
+                🟠 <strong>{expected}</strong>
+              </>
+            )}
           </span>
-          {ex.after}
-          {checked && (
-            <span className="inline-result">
-              {right ? (
-                '✅'
-              ) : (
-                <>
-                  🟠 <strong>{ex.answers[0]}</strong>
-                </>
-              )}
+        )}
+      </p>
+    </div>
+  )
+}
+
+function SegmentedCard({ card, cardIdx, answers, setAnswer, checked, showEn }) {
+  let bi = -1
+  return (
+    <div className="ex-card seg-card">
+      {card.instruction && <p className="seg-instruction">{card.instruction}</p>}
+      <p className="seg-text">
+        {card.segments.map((s, i) => {
+          if (typeof s === 'string') return <Fragment key={i}>{s}</Fragment>
+          bi += 1
+          const idx = bi
+          const key = `${cardIdx}:${idx}`
+          const val = answers[key] || ''
+          const right = isCorrect(val, [s.a])
+          const cls = checked ? (right ? 'ok' : 'ko') : ''
+          if (s.t === 'select') {
+            return (
+              <span key={i} className={`seg-blank ${cls}`}>
+                <select
+                  value={val}
+                  disabled={checked}
+                  onChange={(e) => setAnswer(key, e.target.value)}
+                >
+                  <option value="">—</option>
+                  {s.o.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+                {checked && !right && <span className="seg-correct">{s.a}</span>}
+              </span>
+            )
+          }
+          return (
+            <span key={i} className={`seg-blank ${cls}`}>
+              <input
+                className="blank blank-inline"
+                value={val}
+                disabled={checked}
+                onChange={(e) => setAnswer(key, e.target.value)}
+                placeholder="…"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {s.hint && <span className="blank-hint">({s.hint})</span>}
+              {checked && !right && <span className="seg-correct">{s.a}</span>}
             </span>
-          )}
-        </p>
-        <div className="verb-inline">
-          <em>({ex.verb})</em>
-          {showEn && <span className="verb-en">{ex.verbEn}</span>}
+          )
+        })}
+      </p>
+      {checked && card.tip && (
+        <div className="reminder seg-tip">
+          <span className="reminder-label">💡 {showEn ? 'Tip:' : 'Astuce :'}</span>{' '}
+          {showEn ? card.tipEn : card.tip}
         </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Écran de niveau (grade)
+// ---------------------------------------------------------------------------
+function GradeScreen({ name, set, correct, answered, onRecord, onBack, onRetry }) {
+  const percent = answered ? Math.round((correct / answered) * 100) : 0
+  const scoreStr = `${correct} / ${answered}`
+  const tier = getTier(percent)
+  const dateStr = new Date().toLocaleString('fr-FR')
+  const doneRef = useRef(false)
+
+  useEffect(() => {
+    if (doneRef.current) return
+    doneRef.current = true
+    onRecord(set.id, correct, answered)
+    if (!isEmailConfigured()) return
+    emailjs
+      .send(
+        emailConfig.serviceId,
+        emailConfig.templateId,
+        {
+          student_name: name,
+          score: scoreStr,
+          correct: String(correct),
+          answered: String(answered),
+          total: String(answered),
+          percent: `${percent}%`,
+          outcome: `Set « ${set.title} » — niveau ${tier.name}`,
+          date: dateStr,
+          details: `Set : ${set.title}\nScore : ${scoreStr} (${percent}%)\nNiveau : ${tier.name}`,
+        },
+        { publicKey: emailConfig.publicKey }
+      )
+      .catch((err) => console.error('EmailJS :', err))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <div className="done">
+      <TierImage cls={tier.cls} />
+      <h1 className={`tier-title ${tier.cls}`}>
+        {tier.emoji} {tier.name}
+      </h1>
+      <p className="lead">
+        {name} — set « {set.title} »
+      </p>
+      <div className="scorebox">
+        <div className="score-big">{scoreStr}</div>
+        <div className="score-sub">bonnes réponses · {percent}% de réussite</div>
+      </div>
+      <div className={`tier-message ${tier.cls}`}>{tier.message}</div>
+      <TierLadder currentCls={tier.cls} />
+      <div className="end-actions">
+        <button className="btn btn-primary" onClick={onBack}>
+          ← Retour au menu
+        </button>
+        <button className="btn btn-secondary" onClick={onRetry}>
+          🔁 Refaire ce set
+        </button>
       </div>
     </div>
   )
 }
 
-// Médaillon « aquarelle / heroic fantasy » : fond dégradé, lavis flous,
-// texture papier, bords irréguliers façon pinceau (filtres SVG).
+// ---------------------------------------------------------------------------
+// Emblèmes aquarelle + niveaux (thème héroïque)
+// ---------------------------------------------------------------------------
 function WcMedallion({ id, label, skyFrom, skyTo, border, bg, fg }) {
   const cc = `${id}-cc`
   const wc = `${id}-wc`
@@ -545,12 +726,7 @@ const STAR =
 function TierImage({ cls }) {
   if (cls === 'tier-legende') {
     return (
-      <WcMedallion
-        id="lg"
-        label="Légende"
-        skyFrom="#fffbeb"
-        skyTo="#f59e0b"
-        border="#a16207"
+      <WcMedallion id="lg" label="Légende" skyFrom="#fffbeb" skyTo="#f59e0b" border="#a16207"
         bg={
           <>
             <polygon points="100,20 84,120 116,120" fill="#fde68a" opacity="0.55" />
@@ -567,8 +743,6 @@ function TierImage({ cls }) {
             <circle cx="100" cy="102" r="7" fill="#ef4444" stroke="#a16207" strokeWidth="2" />
             <circle cx="70" cy="120" r="5" fill="#3b82f6" stroke="#a16207" strokeWidth="2" />
             <circle cx="130" cy="120" r="5" fill="#22c55e" stroke="#a16207" strokeWidth="2" />
-            <circle cx="150" cy="56" r="4" fill="#fffbeb" />
-            <circle cx="52" cy="66" r="3" fill="#fffbeb" />
           </>
         }
       />
@@ -576,12 +750,7 @@ function TierImage({ cls }) {
   }
   if (cls === 'tier-heros') {
     return (
-      <WcMedallion
-        id="he"
-        label="Héros"
-        skyFrom="#fef3c7"
-        skyTo="#fb923c"
-        border="#b45309"
+      <WcMedallion id="he" label="Héros" skyFrom="#fef3c7" skyTo="#fb923c" border="#b45309"
         bg={
           <>
             <circle cx="100" cy="66" r="34" fill="#fde68a" opacity="0.85" />
@@ -603,12 +772,7 @@ function TierImage({ cls }) {
   }
   if (cls === 'tier-champion') {
     return (
-      <WcMedallion
-        id="ch"
-        label="Champion"
-        skyFrom="#f5f3ff"
-        skyTo="#a78bfa"
-        border="#6d28d9"
+      <WcMedallion id="ch" label="Champion" skyFrom="#f5f3ff" skyTo="#a78bfa" border="#6d28d9"
         bg={
           <>
             <polygon points="100,100 20,30 40,20" fill="#ede9fe" opacity="0.5" />
@@ -623,7 +787,6 @@ function TierImage({ cls }) {
             <path d="M82 66 L96 112 L86 112 Z" fill="#a78bfa" />
             <path d="M118 66 L104 112 L114 112 Z" fill="#7c3aed" />
             <circle cx="100" cy="122" r="30" fill="#fbbf24" stroke="#7c3aed" strokeWidth="4" />
-            <circle cx="100" cy="122" r="30" fill="none" stroke="#fde68a" strokeWidth="2" />
             <g transform="translate(100 122) scale(0.72)" fill="#7c3aed">
               <path d={STAR} />
             </g>
@@ -634,12 +797,7 @@ function TierImage({ cls }) {
   }
   if (cls === 'tier-aventurier') {
     return (
-      <WcMedallion
-        id="av"
-        label="Aventurier"
-        skyFrom="#eff6ff"
-        skyTo="#60a5fa"
-        border="#1d4ed8"
+      <WcMedallion id="av" label="Aventurier" skyFrom="#eff6ff" skyTo="#60a5fa" border="#1d4ed8"
         bg={
           <>
             <path d="M-5 172 L44 92 L86 150 L122 96 L172 164 L205 122 V210 H-5 Z" fill="#3b82f6" opacity="0.8" />
@@ -652,7 +810,6 @@ function TierImage({ cls }) {
         fg={
           <>
             <circle cx="100" cy="120" r="35" fill="#fbfdff" opacity="0.94" stroke="#1d4ed8" strokeWidth="4" />
-            <circle cx="100" cy="120" r="35" fill="none" stroke="#93c5fd" strokeWidth="1.5" />
             <polygon points="100,90 109,120 100,111 91,120" fill="#ef4444" />
             <polygon points="100,150 91,120 100,129 109,120" fill="#1d4ed8" />
             <circle cx="100" cy="120" r="5" fill="#1d4ed8" />
@@ -661,14 +818,8 @@ function TierImage({ cls }) {
       />
     )
   }
-  // Apprenti (défaut)
   return (
-    <WcMedallion
-      id="ap"
-      label="Apprenti"
-      skyFrom="#fef9c3"
-      skyTo="#86efac"
-      border="#15803d"
+    <WcMedallion id="ap" label="Apprenti" skyFrom="#fef9c3" skyTo="#86efac" border="#15803d"
       bg={
         <>
           <circle cx="150" cy="58" r="24" fill="#fef08a" opacity="0.75" />
@@ -682,15 +833,12 @@ function TierImage({ cls }) {
           <path d="M100 120 C94 96 68 90 52 98 C60 122 82 128 100 120 Z" fill="#22c55e" />
           <path d="M100 110 C106 86 132 80 148 88 C140 112 118 118 100 110 Z" fill="#16a34a" />
           <circle cx="100" cy="150" r="9" fill="#fde68a" opacity="0.85" />
-          <circle cx="150" cy="50" r="4" fill="#fffbeb" />
-          <circle cx="60" cy="74" r="3" fill="#fffbeb" />
         </>
       }
     />
   )
 }
 
-// Échelle des niveaux (pour montrer où l'élève peut monter).
 const TIER_LADDER = [
   { name: 'Apprenti', cls: 'tier-apprenti', range: '0–49 %', emoji: '🌱' },
   { name: 'Aventurier', cls: 'tier-aventurier', range: '50–74 %', emoji: '🧭' },
@@ -720,202 +868,14 @@ function TierLadder({ currentCls }) {
   )
 }
 
-// Thème héroïque : le niveau (titre) dépend du pourcentage de réussite.
 function getTier(percent) {
-  if (percent >= 100) {
-    return {
-      name: 'Légende',
-      emoji: '🏆',
-      cls: 'tier-legende',
-      message:
-        '100 % ! Tu es une LÉGENDE ! Personne ne t’arrête : tu maîtrises vraiment l’accord des participes passés.',
-    }
-  }
-  if (percent >= 95) {
-    return {
-      name: 'Héros',
-      emoji: '🦸',
-      cls: 'tier-heros',
-      message:
-        'Impressionnant, tu es un vrai Héros ! Il te manque juste un souffle pour atteindre 100 % et devenir une Légende !',
-    }
-  }
-  if (percent >= 75) {
-    return {
-      name: 'Champion',
-      emoji: '🏅',
-      cls: 'tier-champion',
-      message:
-        'Wouah ! Quel Champion ! Oseras-tu refaire le test pour aller jusqu’à 100 % et devenir une Légende ?',
-    }
-  }
-  if (percent >= 50) {
-    return {
-      name: 'Aventurier',
-      emoji: '🧭',
-      cls: 'tier-aventurier',
-      message:
-        'Tu es un Aventurier ! Si tu refais encore le test, tu peux devenir encore meilleur… Sers-toi de tes fiches de grammaire.',
-    }
-  }
-  return {
-    name: 'Apprenti',
-    emoji: '🌱',
-    cls: 'tier-apprenti',
-    message:
-      'Tu es un Apprenti ! Refais le test pour monter de niveau ! Tu vas y arriver. Sers-toi de tes fiches de grammaire.',
-  }
-}
-
-function buildDetails(history) {
-  return history
-    .map((h, i) => {
-      const mark = h.correct ? 'OK ' : 'X  '
-      const given = h.given || '(vide)'
-      return `${mark}${i + 1}. (${h.verb}) « ${h.prompt} » → réponse: "${given}"${
-        h.correct ? '' : ` (attendu: "${h.expected}")`
-      }`
-    })
-    .join('\n')
-}
-
-function Done({
-  name,
-  outcome,
-  history,
-  correctCount,
-  sendState,
-  setSendState,
-  onRestart,
-}) {
-  const answered = history.length
-  const percent = answered ? Math.round((correctCount / answered) * 100) : 0
-  const scoreStr = `${correctCount} / ${answered}`
-  const outcomeLabel =
-    outcome === 'finished' ? 'Atelier terminé' : 'Arrêt anticipé'
-  const details = buildDetails(history)
-  const dateStr = new Date().toLocaleString('fr-FR')
-  const tier = getTier(percent)
-  const sentOnceRef = useRef(false)
-
-  function downloadResults() {
-    const content =
-      `Atelier — L'accord des participes passés\n` +
-      `----------------------------------------\n` +
-      `Élève      : ${name}\n` +
-      `Score      : ${scoreStr} (${percent}%)\n` +
-      `Exercices  : ${answered} / ${TOTAL} faits\n` +
-      `Statut     : ${outcomeLabel}\n` +
-      `Date       : ${dateStr}\n\n` +
-      `Détail :\n${details}\n`
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `resultats_${name.replace(/\s+/g, '_') || 'eleve'}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  useEffect(() => {
-    if (sentOnceRef.current) return
-    sentOnceRef.current = true
-    if (!isEmailConfigured()) {
-      setSendState('idle')
-      return
-    }
-    setSendState('sending')
-    emailjs
-      .send(
-        emailConfig.serviceId,
-        emailConfig.templateId,
-        {
-          student_name: name,
-          score: scoreStr,
-          correct: String(correctCount),
-          answered: String(answered),
-          total: String(TOTAL),
-          percent: `${percent}%`,
-          outcome: outcomeLabel,
-          date: dateStr,
-          details,
-        },
-        { publicKey: emailConfig.publicKey }
-      )
-      .then(() => setSendState('sent'))
-      .catch((err) => {
-        console.error('Envoi EmailJS échoué :', err)
-        setSendState('error')
-      })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  return (
-    <div className="done">
-      <TierImage cls={tier.cls} />
-      <h1 className={`tier-title ${tier.cls}`}>
-        {tier.emoji} {tier.name}
-      </h1>
-      <p className="lead">
-        {name} —{' '}
-        {outcome === 'finished'
-          ? 'tu as terminé tout l’atelier !'
-          : 'tu t’es arrêté ici, bravo pour ton travail.'}
-      </p>
-
-      <div className="scorebox">
-        <div className="score-big">{scoreStr}</div>
-        <div className="score-sub">
-          bonnes réponses · {percent}% de réussite
-        </div>
-      </div>
-
-      <div className={`tier-message ${tier.cls}`}>{tier.message}</div>
-
-      <TierLadder currentCls={tier.cls} />
-
-      <div className={`send-status send-${sendState}`}>
-        {sendState === 'sending' && '📨 Envoi de tes résultats au professeur…'}
-        {sendState === 'sent' &&
-          '✅ Tes résultats ont bien été envoyés à ton professeur.'}
-        {sendState === 'error' &&
-          '⚠️ L’envoi par e-mail n’a pas fonctionné. Télécharge tes résultats ci-dessous et remets-les à ton professeur.'}
-        {sendState === 'idle' &&
-          'ℹ️ Télécharge tes résultats ci-dessous et remets-les à ton professeur.'}
-      </div>
-
-      <div className="end-actions">
-        <button className="btn btn-primary" onClick={onRestart}>
-          🔁 Recommencer l’atelier
-        </button>
-        <button className="btn btn-secondary" onClick={downloadResults}>
-          ⬇️ Télécharger mes résultats (.txt)
-        </button>
-      </div>
-
-      <details className="recap">
-        <summary>Voir le détail de mes réponses</summary>
-        <ul>
-          {history.map((h, i) => (
-            <li key={i} className={h.correct ? 'ok' : 'ko'}>
-              <span className="recap-mark">{h.correct ? '✅' : '🟠'}</span>
-              <span>
-                ({h.verb}) « {h.prompt} » → <em>{h.given || '(vide)'}</em>
-                {!h.correct && (
-                  <>
-                    {' '}
-                    <span className="recap-expected">
-                      attendu : {h.expected}
-                    </span>
-                  </>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </details>
-    </div>
-  )
+  if (percent >= 100)
+    return { name: 'Légende', emoji: '🏆', cls: 'tier-legende', message: '100 % ! Tu es une LÉGENDE ! Personne ne t’arrête : tu maîtrises vraiment ce set.' }
+  if (percent >= 95)
+    return { name: 'Héros', emoji: '🦸', cls: 'tier-heros', message: 'Impressionnant, tu es un vrai Héros ! Il te manque juste un souffle pour atteindre 100 % et devenir une Légende !' }
+  if (percent >= 75)
+    return { name: 'Champion', emoji: '🏅', cls: 'tier-champion', message: 'Wouah ! Quel Champion ! Oseras-tu refaire ce set pour aller jusqu’à 100 % et devenir une Légende ?' }
+  if (percent >= 50)
+    return { name: 'Aventurier', emoji: '🧭', cls: 'tier-aventurier', message: 'Tu es un Aventurier ! Refais ce set pour devenir encore meilleur… Sers-toi de tes fiches de grammaire.' }
+  return { name: 'Apprenti', emoji: '🌱', cls: 'tier-apprenti', message: 'Tu es un Apprenti ! Refais ce set pour monter de niveau ! Tu vas y arriver. Sers-toi de tes fiches de grammaire.' }
 }
