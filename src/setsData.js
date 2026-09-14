@@ -355,6 +355,7 @@ export const SETS = [
     title: 'L’accord du participe passé',
     subtitle: 'Check 4 — quand et comment accorder',
     kind: 'exercises',
+    rewardVideo: 'Z3f3H9EW53Y', // chanson récompense (niveau Légende)
     intro:
       'Ajoute la terminaison de l’accord au participe passé (par ex. « s », « e », « es »). Laisse vide s’il n’y a pas d’accord !',
     cards: check4Cards,
