@@ -333,6 +333,7 @@ export const SETS = [
     subtitle: 'Check 2 — être ou avoir',
     kind: 'exercises',
     paced: true,
+    rewardVideo: 'ttw1KeiF9mA', // chanson récompense (niveau Légende)
     cards: check2Cards,
   },
   {
@@ -342,6 +343,7 @@ export const SETS = [
     title: 'Le bon participe passé',
     subtitle: 'Check 3 — la bonne forme (-é / -i / -u)',
     kind: 'exercises',
+    rewardVideo: 'jhqJY0ll1Wo', // chanson récompense (niveau Légende)
     intro:
       'Écris le participe passé de chaque verbe. Pense aux terminaisons -ER → -é, -IR → -i, -RE → -u… et aux exceptions !',
     cards: [{ kind: 'verbs', items: check3Verbs }],

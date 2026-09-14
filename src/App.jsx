@@ -685,6 +685,25 @@ function GradeScreen({ name, set, answers, onRecord, onBack, onRetry }) {
         <div className="score-sub">bonnes réponses · {percent}% de réussite</div>
       </div>
       <div className={`tier-message ${tier.cls}`}>{tier.message}</div>
+
+      {percent === 100 && set.rewardVideo && (
+        <div className="reward">
+          <div className="reward-title">
+            🎁 Récompense de Légende : ta chanson&nbsp;! 🎵
+          </div>
+          <div className="reward-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${set.rewardVideo}`}
+              title="Chanson récompense"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
+
       <TierLadder currentCls={tier.cls} />
 
       <details className="corrige" open>

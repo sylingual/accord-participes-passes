@@ -750,6 +750,34 @@ h1 {
   border-color: #facc15;
   font-weight: 700;
 }
+/* Récompense (chanson YouTube au niveau Légende) */
+.reward {
+  margin: 0 0 18px;
+}
+.reward-title {
+  font-weight: 800;
+  font-family: 'Poppins', sans-serif;
+  color: #a16207;
+  font-size: 15.5px;
+  margin-bottom: 10px;
+}
+.reward-video {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(31, 41, 55, 0.2);
+  border: 3px solid #facc15;
+}
+.reward-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 /* Échelle des niveaux (motivation) */
 .tier-ladder {
   display: flex;
