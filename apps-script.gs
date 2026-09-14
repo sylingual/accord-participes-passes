@@ -15,7 +15,8 @@
  *
  * Deux onglets alimentés automatiquement :
  *   - « Résultats » : Horodatage · Élève · Set · Score · Réussite (%) · Niveau.
- *   - « Réactions » : Horodatage · Élève · Exercice · Réaction (J'aime / pas aimé).
+ *   - « Réactions » : Exercice · 👍 J'aime · 👎 J'ai pas aimé  (COMPTEUR GLOBAL,
+ *     sans nom d'élève — chaque exercice a sa ligne, les compteurs s'incrémentent).
  */
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -33,14 +34,28 @@ function doPost(e) {
     if (data.type === 'reaction') {
       var rsheet = ss.getSheetByName('Réactions') || ss.insertSheet('Réactions');
       if (rsheet.getLastRow() === 0) {
-        rsheet.appendRow(['Horodatage', 'Élève', 'Exercice', 'Réaction']);
+        rsheet.appendRow(['Exercice', "👍 J'aime", "👎 J'ai pas aimé"]);
       }
-      rsheet.appendRow([
-        new Date(),
-        data.name || '',
-        data.link || '',
-        data.reaction || '',
-      ]);
+      var key = data.title || data.url || '';
+      // Cherche la ligne de cet exercice (sinon on la crée).
+      var col = rsheet.getRange(1, 1, rsheet.getLastRow(), 1).getValues();
+      var row = -1;
+      for (var i = 1; i < col.length; i++) {
+        if (col[i][0] === key) {
+          row = i + 1;
+          break;
+        }
+      }
+      if (row === -1) {
+        rsheet.appendRow([key, 0, 0]);
+        row = rsheet.getLastRow();
+      }
+      var up = Number(rsheet.getRange(row, 2).getValue()) || 0;
+      var down = Number(rsheet.getRange(row, 3).getValue()) || 0;
+      up = Math.max(0, up + (Number(data.up) || 0));
+      down = Math.max(0, down + (Number(data.down) || 0));
+      rsheet.getRange(row, 2).setValue(up);
+      rsheet.getRange(row, 3).setValue(down);
       return ContentService.createTextOutput('ok');
     }
 
