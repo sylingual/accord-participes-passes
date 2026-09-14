@@ -985,12 +985,12 @@ function TierLadder({ currentCls }) {
 
 function getTier(percent) {
   if (percent >= 100)
-    return { name: 'Légende', emoji: '🏆', cls: 'tier-legende', message: '100 % ! Tu es une LÉGENDE ! Personne ne t’arrête : tu maîtrises vraiment ce set.' }
+    return { name: 'Légende', emoji: '🏆', cls: 'tier-legende', message: '100 % ! Tu es une LÉGENDE ! Personne ne t’arrête : tu maîtrises vraiment ce set 😎' }
   if (percent >= 95)
-    return { name: 'Héros', emoji: '🦸', cls: 'tier-heros', message: 'Impressionnant, tu es un vrai Héros ! Il te manque juste un souffle pour atteindre 100 % et devenir une Légende !' }
+    return { name: 'Héros', emoji: '🦸', cls: 'tier-heros', message: 'Impressionnant, tu es un vrai Héros ! Il te manque juste un dernier souffle pour atteindre 100 % et devenir une Légende !' }
   if (percent >= 75)
     return { name: 'Champion', emoji: '🏅', cls: 'tier-champion', message: 'Wouah ! Quel Champion ! Oseras-tu refaire ce set pour aller jusqu’à 100 % et devenir une Légende ?' }
   if (percent >= 50)
-    return { name: 'Aventurier', emoji: '🧭', cls: 'tier-aventurier', message: 'Tu es un Aventurier ! Refais ce set pour devenir encore meilleur… Sers-toi de tes fiches de grammaire.' }
-  return { name: 'Apprenti', emoji: '🌱', cls: 'tier-apprenti', message: 'Tu es un Apprenti ! Refais ce set pour monter de niveau ! Tu vas y arriver. Sers-toi de tes fiches de grammaire.' }
+    return { name: 'Aventurier', emoji: '🧭', cls: 'tier-aventurier', message: 'Tu es un Aventurier ! Refais ce set pour devenir encore meilleur… Pense à te servir de tes fiches de grammaire.' }
+  return { name: 'Apprenti', emoji: '🌱', cls: 'tier-apprenti', message: 'Tu es un Apprenti ! Bravo pour ton entraînement. Refais le set pour monter de niveau ! Tu vas y arriver, je le sais. Pense à te servir de tes fiches de grammaire.' }
 }
