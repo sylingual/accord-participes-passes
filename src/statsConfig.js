@@ -19,7 +19,7 @@
 
 export const statsConfig = {
   // Colle ici l'URL de ton application web Apps Script (se termine par /exec)
-  sheetsUrl: 'VOTRE_URL_APPS_SCRIPT',
+  sheetsUrl: 'https://script.google.com/macros/s/AKfycbyyvdqYTyNhJ3viCOEFh3Q5BddfMq4gLvwvrugB5dW4qREN7b6SkR0cfrP_2cauc4ziFw/exec',
 }
 
 export function isStatsConfigured() {
