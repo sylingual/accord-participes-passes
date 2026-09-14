@@ -731,16 +731,20 @@ function GradeScreen({ name, group, set, answers, onRecord, onBack, onRetry }) {
           <div className="reward-title">
             🎁 Récompense de Légende : ta chanson&nbsp;! 🎵
           </div>
-          <div className="reward-video">
-            <iframe
-              src={`https://www.youtube.com/embed/${set.rewardVideo}`}
-              title="Chanson récompense"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            />
-          </div>
+          <a
+            className="reward-video"
+            href={`https://www.youtube.com/watch?v=${set.rewardVideo}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              backgroundImage: `url(https://img.youtube.com/vi/${set.rewardVideo}/hqdefault.jpg)`,
+            }}
+          >
+            <span className="reward-play" aria-hidden="true">
+              ▶
+            </span>
+            <span className="reward-cta">Écouter sur YouTube ↗</span>
+          </a>
         </div>
       )}
 
