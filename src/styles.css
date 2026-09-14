@@ -30,6 +30,15 @@ body {
   min-height: 100vh;
 }
 
+/* Les boutons / champs n'héritent pas de la police du body par défaut :
+   on les force à utiliser Nunito (sinon ils retombent sur Arial système). */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 /* Titres / éléments d'affichage : Poppins (plus rond) */
 h1,
 h2,
