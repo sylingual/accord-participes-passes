@@ -10,7 +10,7 @@
 //   { kind:'sentence',  before, after, answers, allowEmpty, hint, rule, ruleEn, example, exampleEn }
 //   { kind:'segmented', instruction, tip, tipEn, segments:[ 'texte' | {t:'select'|'text', o?, a, hint?} ] }
 
-const AUX = { t: 'select', o: ['être', 'avoir'], a: 'être' }
+const AUX = { t: 'select', o: ['est', 'a'], a: 'est' }
 const sel = (o, a) => ({ t: 'select', o, a })
 const txt = (a, hint) => ({ t: 'text', a, hint })
 
@@ -25,7 +25,7 @@ const check2Cards = [
   {
     kind: 'segmented',
     instruction:
-      'Exercice 1 — Choisis le bon auxiliaire (être ou avoir) pour chaque verbe.',
+      'Exercice 1 — Choisis l’auxiliaire conjugué (est ou a) pour chaque verbe.',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [

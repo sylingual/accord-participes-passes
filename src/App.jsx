@@ -273,104 +273,88 @@ function ExerciseRunner({ set, name, onRecord, onBack }) {
   const cards = set.cards
   const paced = !!set.paced
   const [answers, setAnswers] = useState({})
-  const [showEn, setShowEn] = useState(false)
-  const [checkedUpto, setCheckedUpto] = useState(0) // paced : nb de cartes validées
-  const [nonPacedChecked, setNonPacedChecked] = useState(false)
+  const [idx, setIdx] = useState(0) // paced : carte courante
+  const [cardChecked, setCardChecked] = useState(false) // paced : carte validée ?
   const [graded, setGraded] = useState(false)
   const topRef = useRef(null)
 
   const setAnswer = (k, v) => setAnswers((a) => ({ ...a, [k]: v }))
 
-  function computeScore() {
-    let correct = 0
-    let total = 0
-    cards.forEach((card, ci) => {
-      blanksOf(card).forEach((bl, bi) => {
-        total++
-        if (isCorrect(answers[`${ci}:${bi}`] || '', bl.answers)) correct++
-      })
-    })
-    return { correct, total }
-  }
-
+  // Chaque validation / passage change d'écran → on remonte tout en haut.
   useEffect(() => {
     if (topRef.current) topRef.current.scrollIntoView({ block: 'start' })
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
-  }, [checkedUpto, nonPacedChecked, graded])
+  }, [idx, cardChecked, graded])
+
+  function reset() {
+    setAnswers({})
+    setIdx(0)
+    setCardChecked(false)
+    setGraded(false)
+  }
 
   if (graded) {
-    const { correct, total } = computeScore()
     return (
       <GradeScreen
         name={name}
         set={set}
-        correct={correct}
-        answered={total}
+        answers={answers}
         onRecord={onRecord}
         onBack={onBack}
-        onRetry={() => {
-          setAnswers({})
-          setCheckedUpto(0)
-          setNonPacedChecked(false)
-          setGraded(false)
-        }}
+        onRetry={reset}
       />
     )
   }
 
-  // -------- déroulé paced (une carte à la fois) ----------------------------
+  // -------- paced : UNE carte par écran ------------------------------------
   if (paced) {
-    const activeIndex = checkedUpto // carte active (non encore validée)
-    const allDone = checkedUpto >= cards.length
+    const card = cards[idx]
+    const isLast = idx === cards.length - 1
     return (
       <div ref={topRef}>
-        <ProgressBar value={checkedUpto} total={cards.length} />
+        <ProgressBar value={idx} total={cards.length} />
         <div className="cards">
-          {cards.slice(0, checkedUpto + 1).map((card, ci) => (
-            <CardView
-              key={ci}
-              card={card}
-              cardIdx={ci}
-              number={ci + 1}
-              answers={answers}
-              setAnswer={setAnswer}
-              checked={ci < checkedUpto}
-              showEn={showEn}
-            />
-          ))}
+          <CardView
+            key={idx}
+            card={card}
+            cardIdx={idx}
+            number={idx + 1}
+            answers={answers}
+            setAnswer={setAnswer}
+            checked={cardChecked}
+            showEn={false}
+          />
         </div>
-        {allDone ? (
+        {!cardChecked ? (
+          <button
+            className="btn btn-primary sticky-validate"
+            onClick={() => setCardChecked(true)}
+          >
+            Valider
+          </button>
+        ) : isLast ? (
           <button className="btn btn-finish" onClick={() => setGraded(true)}>
             🏅 Voir mon niveau
           </button>
         ) : (
           <button
-            className="btn btn-primary sticky-validate"
-            onClick={() => setCheckedUpto((c) => c + 1)}
+            className="btn btn-continue"
+            onClick={() => {
+              setIdx(idx + 1)
+              setCardChecked(false)
+            }}
           >
-            Valider {activeIndex > 0 ? 'et continuer' : 'ma réponse'}
+            Continuer →
           </button>
         )}
       </div>
     )
   }
 
-  // -------- déroulé non paced (tout d'un coup) -----------------------------
-  const sentenceCards = cards
-    .map((c, i) => ({ c, i }))
-    .filter((x) => x.c.kind === 'sentence' && x.c.rule)
+  // -------- non paced : écran de saisie → écran de résultat ----------------
   return (
     <div ref={topRef}>
       {set.intro && <p className="links-intro">💡 {set.intro}</p>}
-      <div className="set-header set-header-tools">
-        <button
-          type="button"
-          className="link-btn set-lang"
-          onClick={() => setShowEn((s) => !s)}
-        >
-          🇬🇧 {showEn ? 'français' : 'anglais'}
-        </button>
-      </div>
       <div className="cards">
         {cards.map((card, ci) => (
           <CardView
@@ -380,43 +364,17 @@ function ExerciseRunner({ set, name, onRecord, onBack }) {
             number={ci + 1}
             answers={answers}
             setAnswer={setAnswer}
-            checked={nonPacedChecked}
-            showEn={showEn}
+            checked={false}
+            showEn={false}
           />
         ))}
       </div>
-      {!nonPacedChecked ? (
-        <button
-          className="btn btn-primary sticky-validate"
-          onClick={() => setNonPacedChecked(true)}
-        >
-          Valider mes réponses
-        </button>
-      ) : (
-        <>
-          {sentenceCards.length > 0 && (
-            <div className="reminder multi-reminder set-correction">
-              <span className="reminder-label">
-                {showEn ? 'Corrections & rules:' : 'Corrigé & règles :'}
-              </span>
-              <ul>
-                {sentenceCards.map(({ c, i }) => (
-                  <li key={i}>
-                    <span className="corr-num">{i + 1}.</span>{' '}
-                    {showEn ? c.ruleEn : c.rule}
-                    <div className="multi-example">
-                      <RichText text={showEn ? c.exampleEn : c.example} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <button className="btn btn-finish" onClick={() => setGraded(true)}>
-            🏅 Voir mon niveau
-          </button>
-        </>
-      )}
+      <button
+        className="btn btn-primary sticky-validate"
+        onClick={() => setGraded(true)}
+      >
+        Valider mes réponses
+      </button>
     </div>
   )
 }
@@ -511,7 +469,7 @@ function VerbsCard({ card, cardIdx, answers, setAnswer, checked, showEn }) {
   )
 }
 
-function SentenceCard({ card, cardIdx, number, answers, setAnswer, checked }) {
+function SentenceCard({ card, cardIdx, number, answers, setAnswer, checked, showEn }) {
   const key = `${cardIdx}:0`
   const val = answers[key] || ''
   const right = checked && isCorrect(val, card.answers)
@@ -530,7 +488,7 @@ function SentenceCard({ card, cardIdx, number, answers, setAnswer, checked }) {
             value={val}
             disabled={checked}
             onChange={(e) => setAnswer(key, e.target.value)}
-            placeholder={card.hint || '…'}
+            placeholder="…"
             aria-label="terminaison de l’accord"
             autoComplete="off"
             spellCheck={false}
@@ -549,6 +507,24 @@ function SentenceCard({ card, cardIdx, number, answers, setAnswer, checked }) {
           </span>
         )}
       </p>
+      {checked && card.rule && (
+        <div className="reminder">
+          <div className="reminder-rule">
+            <span className="reminder-label">Règle&nbsp;:</span>{' '}
+            {showEn ? card.ruleEn : card.rule}
+          </div>
+          {card.example && (
+            <div className="examples">
+              <span className="examples-label">
+                {showEn ? 'Example:' : 'Exemple :'}
+              </span>
+              <div className="example-line">
+                <RichText text={showEn ? card.exampleEn : card.example} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -616,12 +592,21 @@ function SegmentedCard({ card, cardIdx, answers, setAnswer, checked, showEn }) {
 // ---------------------------------------------------------------------------
 // Écran de niveau (grade)
 // ---------------------------------------------------------------------------
-function GradeScreen({ name, set, correct, answered, onRecord, onBack, onRetry }) {
+function GradeScreen({ name, set, answers, onRecord, onBack, onRetry }) {
+  let correct = 0
+  let answered = 0
+  set.cards.forEach((card, ci) => {
+    blanksOf(card).forEach((bl, bi) => {
+      answered++
+      if (isCorrect(answers[`${ci}:${bi}`] || '', bl.answers)) correct++
+    })
+  })
   const percent = answered ? Math.round((correct / answered) * 100) : 0
   const scoreStr = `${correct} / ${answered}`
   const tier = getTier(percent)
   const dateStr = new Date().toLocaleString('fr-FR')
   const doneRef = useRef(false)
+  const [showEn, setShowEn] = useState(false)
 
   useEffect(() => {
     if (doneRef.current) return
@@ -664,6 +649,34 @@ function GradeScreen({ name, set, correct, answered, onRecord, onBack, onRetry }
       </div>
       <div className={`tier-message ${tier.cls}`}>{tier.message}</div>
       <TierLadder currentCls={tier.cls} />
+
+      <details className="corrige" open>
+        <summary>Voir le corrigé</summary>
+        <div className="set-header set-header-tools">
+          <button
+            type="button"
+            className="link-btn set-lang"
+            onClick={() => setShowEn((s) => !s)}
+          >
+            🇬🇧 {showEn ? 'français' : 'anglais'}
+          </button>
+        </div>
+        <div className="cards corrige-cards">
+          {set.cards.map((card, ci) => (
+            <CardView
+              key={ci}
+              card={card}
+              cardIdx={ci}
+              number={ci + 1}
+              answers={answers}
+              setAnswer={() => {}}
+              checked
+              showEn={showEn}
+            />
+          ))}
+        </div>
+      </details>
+
       <div className="end-actions">
         <button className="btn btn-primary" onClick={onBack}>
           ← Retour au menu

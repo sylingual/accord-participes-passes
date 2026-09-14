@@ -23,11 +23,25 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
   color: var(--ink);
   background: linear-gradient(135deg, var(--bg-grad-1), var(--bg-grad-2));
   min-height: 100vh;
+}
+
+/* Titres / éléments d'affichage : Poppins (plus rond) */
+h1,
+h2,
+.menu-title,
+.set-item-title,
+.setview-title,
+.tier-title,
+.score-big,
+.badge-grade,
+.btn {
+  font-family: 'Poppins', 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
 }
 
 .page {
@@ -1064,6 +1078,24 @@ h1 {
 }
 .seg-tip {
   margin-top: 12px;
+}
+
+/* Corrigé sur l'écran de niveau */
+.corrige {
+  text-align: left;
+  margin: 4px 0 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.corrige > summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--primary-dark);
+  font-family: 'Poppins', sans-serif;
+  margin-bottom: 8px;
+}
+.corrige-cards {
+  margin-top: 8px;
 }
 
 /* Terminaison d'accord (set 4) */
