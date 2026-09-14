@@ -180,19 +180,18 @@ export default function App() {
 function Welcome({ name, setName, group, setGroup, onStart }) {
   return (
     <form onSubmit={onStart} className="welcome">
-      <h1>L’accord des participes passés</h1>
+      <h1>Deviens une légende du passé composé !</h1>
       <p className="lead">
-        Un atelier <strong>en autonomie</strong> en 5 sets. Écris ton prénom,
-        puis choisis le set où tu veux t’entraîner. Chaque set te donne un
-        <strong> niveau</strong> (Apprenti → Légende) !
+        Bienvenue à cet atelier <strong>autonome</strong> sur le passé composé. 
+        Plus tu t'entraînes, plus ça devient facile et automatique ! Pense à vérifier ton cours si ça t'aide. Sauras-tu arriver jusqu'au niveau Légende ? 
       </p>
       <label className="field">
-        <span>Ton prénom :</span>
+        <span>Ton prénom + Nom (initiale) :</span>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Ton prénom/nom"
+          placeholder="exemple : Cynthia M"
           autoFocus
           maxLength={60}
         />
