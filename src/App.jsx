@@ -256,7 +256,7 @@ function Menu({ name, scores, onOpen }) {
                 </span>
                 <span className="set-item-sub">
                   {locked
-                    ? 'Termine les checks 2, 3 et 4 pour débloquer'
+                    ? 'Termine les checks 1 à 4 (au moins une fois) pour débloquer'
                     : set.subtitle}
                 </span>
               </span>

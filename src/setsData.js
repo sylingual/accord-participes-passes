@@ -36,28 +36,10 @@ const check2Cards = [
       ' parti, il ', AUX, ' allé à Lyon et il ', AUX, ' retourné à Paris.',
     ],
   },
-  // Exo 2 : écrire le participe passé
+  // Exo 2 : l'histoire de Camila, une ligne à la fois
   {
     kind: 'segmented',
-    instruction: 'Exercice 2 — Écris le participe passé du verbe indiqué.',
-    tip: 'Terminaisons : -ER → -é, -IR → -i, -RE → -u. Attention aux exceptions (mourir → mort, naître → né).',
-    tipEn: 'Endings: -ER → -é, -IR → -i, -RE → -u. Watch the exceptions (mourir → mort, naître → né).',
-    segments: [
-      'Jean est ', txt('né', 'naître'), ' en 1930. Il est ', txt('mort', 'mourir'),
-      ' en 2011. En 2001, il est ', txt('passé', 'passer'),
-      ' nous voir à la montagne. Il est ', txt('venu', 'venir'), ' de Paris, il est ',
-      txt('arrivé', 'arriver'), ', il est ', txt('monté', 'monter'), ', il est ',
-      txt('entré', 'entrer'), ', il est ', txt('resté', 'rester'), ', il est ',
-      txt('sorti', 'sortir'), ', il est ', txt('descendu', 'descendre'), ', il est ',
-      txt('tombé', 'tomber'), ', il est ', txt('parti', 'partir'), ', il est ',
-      txt('allé', 'aller'), ' à Lyon et il est ', txt('retourné', 'retourner'),
-      ' à Paris.',
-    ],
-  },
-  // Exo 3 : l'histoire de Camila, une ligne à la fois
-  {
-    kind: 'segmented',
-    instruction: 'Exercice 3 : L’histoire de Camila. Choisis le bon auxiliaire.',
+    instruction: 'Exercice 2 : L’histoire de Camila. Choisis le bon auxiliaire.',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -68,7 +50,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -79,7 +61,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -91,7 +73,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -103,7 +85,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -115,7 +97,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -128,7 +110,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -141,7 +123,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -152,7 +134,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -164,7 +146,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -175,7 +157,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -185,7 +167,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -197,7 +179,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -207,7 +189,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (suite)',
+    instruction: 'Exercice 2 (suite)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -219,7 +201,7 @@ const check2Cards = [
   },
   {
     kind: 'segmented',
-    instruction: 'Exercice 3 (fin)',
+    instruction: 'Exercice 2 (fin)',
     tip: AUX_TIP,
     tipEn: AUX_TIP_EN,
     segments: [
@@ -311,91 +293,148 @@ const TENSE_TIP =
 const TENSE_TIP_EN =
   'Imperfect = habit, description, ongoing action (before, often, every day…). Passé composé = a precise, one-off, completed action (yesterday, once, that day…).'
 
-// Chaque carte = une paire de phrases (même verbe, deux temps différents).
-const tcard = (segments) => ({
+// Chaque carte = une paire de phrases (même verbe, deux temps différents),
+// avec une explication personnalisée (comme un prof de FLE).
+const tcard = (tip, tipEn, segments) => ({
   kind: 'segmented',
-  tip: TENSE_TIP,
-  tipEn: TENSE_TIP_EN,
+  tip,
+  tipEn,
   segments,
 })
 
 const check1Cards = [
-  tcard([
-    'Avant, ils ', sel(['sont partis', 'partaient'], 'partaient'),
-    ' en vacances en août.\nCette année, ils ',
-    sel(['sont partis', 'partaient'], 'sont partis'), ' en juin ?',
-  ]),
-  tcard([
-    'Sophie ', sel(['a étudié', 'étudiait'], 'étudiait'),
-    ' tous les soirs.\nElle ', sel(['a étudié', 'étudiait'], 'a étudié'),
-    ' jusqu’en mars dernier.',
-  ]),
-  tcard([
-    'Hier soir, j’', sel(['ai regardé', 'regardais'], 'ai regardé'),
-    ' un dessin animé.\nPetit, je ', sel(['ai regardé', 'regardais'], 'regardais'),
-    ' souvent des dessins animés.',
-  ]),
-  tcard([
-    'Vous ', sel(['vous êtes rencontrés', 'vous rencontriez'], 'vous êtes rencontrés'),
-    ' jeudi.\nVous ',
-    sel(['vous êtes rencontrés', 'vous rencontriez'], 'vous rencontriez'),
-    ' le jeudi.',
-  ]),
-  tcard([
-    'Au moment où nous ', sel(['sommes sortis', 'sortions'], 'sommes sortis'),
-    ', il ', sel(['est tombé', 'tombait'], 'est tombé'),
-    '.\nChaque jour où nous ', sel(['sommes sortis', 'sortions'], 'sortions'),
-    ', il ', sel(['est tombé', 'tombait'], 'tombait'), '.',
-  ]),
-  tcard([
-    'Le 2 juin 2016, nous ', sel(['avons déjeuné', 'déjeunions'], 'avons déjeuné'),
-    ' à la terrasse du café de la Paix.\nTous les 2 juin, nous ',
-    sel(['avons déjeuné', 'déjeunions'], 'déjeunions'),
-    ' à la terrasse du café de la Paix.',
-  ]),
-  tcard([
-    'Pendant la guerre, la vie ', sel(['a été', 'était'], 'était'),
-    ' difficile.\nDe 1939 à 1945, la vie ', sel(['a été', 'était'], 'a été'),
-    ' difficile.',
-  ]),
-  tcard([
-    'Cet été, nous ', sel(['avons repeint', 'repeignions'], 'avons repeint'),
-    ' tous les volets de la maison.\nTous les étés, nous ',
-    sel(['avons repeint', 'repeignions'], 'repeignions'),
-    ' les volets de la maison.',
-  ]),
-  tcard([
-    'Pendant leur enfance, Nicolas et Pierre ', sel(['ont eu', 'avaient'], 'avaient'),
-    ' les cheveux teints en rouge.\nUne fois dans leur vie, Nicolas et Pierre ',
-    sel(['ont eu', 'avaient'], 'ont eu'), ' les cheveux teints en rouge.',
-  ]),
-  tcard([
-    'J’', sel(['ai lu', 'lisais'], 'ai lu'),
-    ' au moins vingt fois à mes enfants l’histoire du Petit Chaperon Rouge.\nJe ',
-    sel(['ai lu', 'lisais'], 'lisais'),
-    ' toujours à mes enfants l’histoire du Petit Chaperon Rouge.',
-  ]),
-  tcard([
-    'La dernière fois qu’il ', sel(['est venu', 'venait'], 'est venu'),
-    ' à Nancy, il nous ', sel(['a téléphoné', 'téléphonait'], 'a téléphoné'),
-    '.\nChaque fois qu’il ', sel(['est venu', 'venait'], 'venait'),
-    ' à Nancy, il nous ', sel(['a téléphoné', 'téléphonait'], 'téléphonait'), '.',
-  ]),
-  tcard([
-    'J’', sel(['ai étudié', 'étudiais'], 'ai étudié'),
-    ' le français pendant longtemps !\nAu lycée, j’',
-    sel(['ai étudié', 'étudiais'], 'étudiais'), ' le français.',
-  ]),
-  tcard([
-    'Nous ', sel(['avons roulé', 'roulions'], 'roulions'),
-    ' depuis plus de six heures.\nNous ', sel(['avons roulé', 'roulions'], 'avons roulé'),
-    ' plus de six heures sans nous arrêter.',
-  ]),
-  tcard([
-    'Les étudiants ', sel(['ont fini', 'finissaient'], 'ont fini'),
-    ' leurs exercices.\nSouvent, les étudiants ',
-    sel(['ont fini', 'finissaient'], 'finissaient'), ' leurs exercices.',
-  ]),
+  tcard(
+    '« Avant » marque une habitude passée → imparfait (partaient). « Cette année » désigne un moment précis et unique → passé composé (sont partis).',
+    '« Avant » signals a past habit → imperfect (partaient). « Cette année » is a specific, one-off moment → passé composé (sont partis).',
+    [
+      'Avant, ils ', sel(['sont partis', 'partaient'], 'partaient'),
+      ' en vacances en août.\nCette année, ils ',
+      sel(['sont partis', 'partaient'], 'sont partis'), ' en juin ?',
+    ]
+  ),
+  tcard(
+    '« Tous les soirs » = action répétée, habitude → imparfait (étudiait). « Jusqu’en mars dernier » = période terminée et délimitée → passé composé (a étudié).',
+    '« Tous les soirs » = a repeated action, a habit → imperfect (étudiait). « Jusqu’en mars dernier » = a finished, bounded period → passé composé (a étudié).',
+    [
+      'Sophie ', sel(['a étudié', 'étudiait'], 'étudiait'),
+      ' tous les soirs.\nElle ', sel(['a étudié', 'étudiait'], 'a étudié'),
+      ' jusqu’en mars dernier.',
+    ]
+  ),
+  tcard(
+    '« Hier soir » = moment précis et terminé → passé composé (ai regardé). « Petit… souvent » = habitude de l’enfance → imparfait (regardais).',
+    '« Hier soir » = a specific, finished moment → passé composé (ai regardé). « Petit… souvent » = a childhood habit → imperfect (regardais).',
+    [
+      'Hier soir, j’', sel(['ai regardé', 'regardais'], 'ai regardé'),
+      ' un dessin animé.\nPetit, je ', sel(['ai regardé', 'regardais'], 'regardais'),
+      ' souvent des dessins animés.',
+    ]
+  ),
+  tcard(
+    '« Jeudi » = un jour précis, une seule fois → passé composé (vous êtes rencontrés). « Le jeudi » = tous les jeudis, habitude → imparfait (vous rencontriez).',
+    '« Jeudi » = one specific day, once → passé composé (vous êtes rencontrés). « Le jeudi » = every Thursday, a habit → imperfect (vous rencontriez).',
+    [
+      'Vous ', sel(['vous êtes rencontrés', 'vous rencontriez'], 'vous êtes rencontrés'),
+      ' jeudi.\nVous ',
+      sel(['vous êtes rencontrés', 'vous rencontriez'], 'vous rencontriez'),
+      ' le jeudi.',
+    ]
+  ),
+  tcard(
+    '« Au moment où » = un événement ponctuel et précis → passé composé (sommes sortis, est tombé). « Chaque jour où » = répétition, habitude → imparfait (sortions, tombait).',
+    '« Au moment où » = one precise event → passé composé (sommes sortis, est tombé). « Chaque jour où » = repetition, a habit → imperfect (sortions, tombait).',
+    [
+      'Au moment où nous ', sel(['sommes sortis', 'sortions'], 'sommes sortis'),
+      ', il ', sel(['est tombé', 'tombait'], 'est tombé'),
+      '.\nChaque jour où nous ', sel(['sommes sortis', 'sortions'], 'sortions'),
+      ', il ', sel(['est tombé', 'tombait'], 'tombait'), '.',
+    ]
+  ),
+  tcard(
+    'Une date précise (« le 2 juin 2016 ») = fait unique → passé composé (avons déjeuné). « Tous les 2 juin » = habitude qui se répète → imparfait (déjeunions).',
+    'A precise date (« le 2 juin 2016 ») = a unique fact → passé composé (avons déjeuné). « Tous les 2 juin » = a repeated habit → imperfect (déjeunions).',
+    [
+      'Le 2 juin 2016, nous ', sel(['avons déjeuné', 'déjeunions'], 'avons déjeuné'),
+      ' à la terrasse du café de la Paix.\nTous les 2 juin, nous ',
+      sel(['avons déjeuné', 'déjeunions'], 'déjeunions'),
+      ' à la terrasse du café de la Paix.',
+    ]
+  ),
+  tcard(
+    '« Pendant la guerre » décrit une situation, un décor → imparfait (était). « De 1939 à 1945 » = période délimitée, avec un début et une fin → passé composé (a été).',
+    '« Pendant la guerre » describes a situation/background → imperfect (était). « De 1939 à 1945 » = a bounded period with a start and an end → passé composé (a été).',
+    [
+      'Pendant la guerre, la vie ', sel(['a été', 'était'], 'était'),
+      ' difficile.\nDe 1939 à 1945, la vie ', sel(['a été', 'était'], 'a été'),
+      ' difficile.',
+    ]
+  ),
+  tcard(
+    '« Cet été » = un été précis, action ponctuelle → passé composé (avons repeint). « Tous les étés » = habitude → imparfait (repeignions).',
+    '« Cet été » = one specific summer, a one-off action → passé composé (avons repeint). « Tous les étés » = a habit → imperfect (repeignions).',
+    [
+      'Cet été, nous ', sel(['avons repeint', 'repeignions'], 'avons repeint'),
+      ' tous les volets de la maison.\nTous les étés, nous ',
+      sel(['avons repeint', 'repeignions'], 'repeignions'),
+      ' les volets de la maison.',
+    ]
+  ),
+  tcard(
+    '« Pendant leur enfance » décrit un état sur une longue durée → imparfait (avaient). « Une fois dans leur vie » = événement unique et ponctuel → passé composé (ont eu).',
+    '« Pendant leur enfance » describes a lasting state → imperfect (avaient). « Une fois dans leur vie » = a unique, one-off event → passé composé (ont eu).',
+    [
+      'Pendant leur enfance, Nicolas et Pierre ', sel(['ont eu', 'avaient'], 'avaient'),
+      ' les cheveux teints en rouge.\nUne fois dans leur vie, Nicolas et Pierre ',
+      sel(['ont eu', 'avaient'], 'ont eu'), ' les cheveux teints en rouge.',
+    ]
+  ),
+  tcard(
+    '« Au moins vingt fois » = actions comptées et terminées → passé composé (ai lu). « Toujours » ici = habitude régulière → imparfait (lisais).',
+    '« Au moins vingt fois » = counted, finished actions → passé composé (ai lu). « Toujours » here = a regular habit → imperfect (lisais).',
+    [
+      'J’', sel(['ai lu', 'lisais'], 'ai lu'),
+      ' au moins vingt fois à mes enfants l’histoire du Petit Chaperon Rouge.\nJe ',
+      sel(['ai lu', 'lisais'], 'lisais'),
+      ' toujours à mes enfants l’histoire du Petit Chaperon Rouge.',
+    ]
+  ),
+  tcard(
+    '« La dernière fois » = un événement précis et unique → passé composé (est venu, a téléphoné). « Chaque fois » = répétition, habitude → imparfait (venait, téléphonait).',
+    '« La dernière fois » = one specific, unique event → passé composé (est venu, a téléphoné). « Chaque fois » = repetition, a habit → imperfect (venait, téléphonait).',
+    [
+      'La dernière fois qu’il ', sel(['est venu', 'venait'], 'est venu'),
+      ' à Nancy, il nous ', sel(['a téléphoné', 'téléphonait'], 'a téléphoné'),
+      '.\nChaque fois qu’il ', sel(['est venu', 'venait'], 'venait'),
+      ' à Nancy, il nous ', sel(['a téléphoné', 'téléphonait'], 'téléphonait'), '.',
+    ]
+  ),
+  tcard(
+    '« Pendant longtemps » = durée délimitée et terminée → passé composé (ai étudié). « Au lycée » décrit une période, une habitude → imparfait (étudiais).',
+    '« Pendant longtemps » = a bounded, finished duration → passé composé (ai étudié). « Au lycée » describes a period, a habit → imperfect (étudiais).',
+    [
+      'J’', sel(['ai étudié', 'étudiais'], 'ai étudié'),
+      ' le français pendant longtemps !\nAu lycée, j’',
+      sel(['ai étudié', 'étudiais'], 'étudiais'), ' le français.',
+    ]
+  ),
+  tcard(
+    '« Depuis… » décrit une action en train de se dérouler, un arrière-plan → imparfait (roulions). Une durée bouclée et terminée (« … sans nous arrêter ») → passé composé (avons roulé).',
+    '« Depuis… » describes an ongoing background action → imperfect (roulions). A completed, bounded duration (« … sans nous arrêter ») → passé composé (avons roulé).',
+    [
+      'Nous ', sel(['avons roulé', 'roulions'], 'roulions'),
+      ' depuis plus de six heures.\nNous ', sel(['avons roulé', 'roulions'], 'avons roulé'),
+      ' plus de six heures sans nous arrêter.',
+    ]
+  ),
+  tcard(
+    'Sans indice d’habitude, l’action est vue comme terminée → passé composé (ont fini). « Souvent » = habitude, répétition → imparfait (finissaient).',
+    'With no habit marker, the action is seen as completed → passé composé (ont fini). « Souvent » = a habit, repetition → imperfect (finissaient).',
+    [
+      'Les étudiants ', sel(['ont fini', 'finissaient'], 'ont fini'),
+      ' leurs exercices.\nSouvent, les étudiants ',
+      sel(['ont fini', 'finissaient'], 'finissaient'), ' leurs exercices.',
+    ]
+  ),
 ]
 
 // --- SET 6 — Petit test final (texte libre) -----------------------------------
@@ -471,6 +510,26 @@ const finalCards = [
   ]),
 ]
 
+// Carte « participes passés » (déplacée du set 2 vers le set 3 : elle ne porte
+// que sur la forme du participe passé, pas sur le choix de l'auxiliaire).
+const jeanParticiplesCard = {
+  kind: 'segmented',
+  instruction: 'Écris le participe passé de chaque verbe (petit texte de Jean).',
+  tip: 'Terminaisons : -ER → -é, -IR → -i, -RE → -u. Attention aux exceptions (mourir → mort, naître → né).',
+  tipEn: 'Endings: -ER → -é, -IR → -i, -RE → -u. Watch the exceptions (mourir → mort, naître → né).',
+  segments: [
+    'Jean est ', txt('né', 'naître'), ' en 1930. Il est ', txt('mort', 'mourir'),
+    ' en 2011. En 2001, il est ', txt('passé', 'passer'),
+    ' nous voir à la montagne. Il est ', txt('venu', 'venir'), ' de Paris, il est ',
+    txt('arrivé', 'arriver'), ', il est ', txt('monté', 'monter'), ', il est ',
+    txt('entré', 'entrer'), ', il est ', txt('resté', 'rester'), ', il est ',
+    txt('sorti', 'sortir'), ', il est ', txt('descendu', 'descendre'), ', il est ',
+    txt('tombé', 'tomber'), ', il est ', txt('parti', 'partir'), ', il est ',
+    txt('allé', 'aller'), ' à Lyon et il est ', txt('retourné', 'retourner'),
+    ' à Paris.',
+  ],
+}
+
 // --- Les SETS ------------------------------------------------------------------
 export const SETS = [
   {
@@ -505,7 +564,7 @@ export const SETS = [
     rewardVideo: 'jhqJY0ll1Wo', // chanson récompense (niveau Légende)
     intro:
       'Écris le participe passé de chaque verbe. Pense aux terminaisons -ER → -é, -IR → -i, -RE → -u… et aux exceptions !',
-    cards: [{ kind: 'verbs', items: check3Verbs }],
+    cards: [{ kind: 'verbs', items: check3Verbs }, jeanParticiplesCard],
   },
   {
     id: 'accord',
@@ -549,7 +608,7 @@ export const SETS = [
     title: 'Petit test final',
     subtitle: 'Le grand test : passé composé ou imparfait ?',
     kind: 'exercises',
-    requires: ['auxiliaire', 'participe', 'accord'],
+    requires: ['imparfait', 'auxiliaire', 'participe', 'accord'],
     intro:
       'Le grand test ! Conjugue chaque verbe au passé composé ou à l’imparfait selon le contexte. Écris la forme complète (ex. « ai ouvert », « faisait »).',
     cards: finalCards,
