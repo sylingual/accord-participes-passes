@@ -368,8 +368,9 @@ function ExerciseRunner({ set, name, group, onRecord, onBack }) {
   const paced = !!set.paced
   const [answers, setAnswers] = useState({})
   const [idx, setIdx] = useState(0) // paced : carte courante
-  const [cardChecked, setCardChecked] = useState(false) // paced : carte validée ?
+  const [cardChecked, setCardChecked] = useState(false) // carte(s) validée(s) ?
   const [graded, setGraded] = useState(false)
+  const [showEn, setShowEn] = useState(false)
   const topRef = useRef(null)
 
   const setAnswer = (k, v) => setAnswers((a) => ({ ...a, [k]: v }))
@@ -447,10 +448,48 @@ function ExerciseRunner({ set, name, group, onRecord, onBack }) {
     )
   }
 
-  // -------- non paced : écran de saisie → écran de résultat ----------------
+  // -------- non paced : saisie → CORRECTION → niveau -----------------------
+  // 1) écran de saisie
+  if (!cardChecked) {
+    return (
+      <div ref={topRef}>
+        {set.intro && <p className="links-intro">💡 {set.intro}</p>}
+        <div className="cards">
+          {cards.map((card, ci) => (
+            <CardView
+              key={ci}
+              card={card}
+              cardIdx={ci}
+              number={ci + 1}
+              answers={answers}
+              setAnswer={setAnswer}
+              checked={false}
+              showEn={false}
+            />
+          ))}
+        </div>
+        <button
+          className="btn btn-primary sticky-validate"
+          onClick={() => setCardChecked(true)}
+        >
+          Valider mes réponses
+        </button>
+      </div>
+    )
+  }
+  // 2) écran de correction (feedback d'abord, le niveau seulement après)
   return (
     <div ref={topRef}>
-      {set.intro && <p className="links-intro">💡 {set.intro}</p>}
+      <div className="corr-head">
+        <h2 className="corr-title">📝 Corrigé — regarde bien tes réponses</h2>
+        <button
+          type="button"
+          className="link-btn set-lang"
+          onClick={() => setShowEn((s) => !s)}
+        >
+          🇬🇧 {showEn ? 'français' : 'anglais'}
+        </button>
+      </div>
       <div className="cards">
         {cards.map((card, ci) => (
           <CardView
@@ -459,17 +498,14 @@ function ExerciseRunner({ set, name, group, onRecord, onBack }) {
             cardIdx={ci}
             number={ci + 1}
             answers={answers}
-            setAnswer={setAnswer}
-            checked={false}
-            showEn={false}
+            setAnswer={() => {}}
+            checked
+            showEn={showEn}
           />
         ))}
       </div>
-      <button
-        className="btn btn-primary sticky-validate"
-        onClick={() => setGraded(true)}
-      >
-        Valider mes réponses
+      <button className="btn btn-finish" onClick={() => setGraded(true)}>
+        🏅 Voir mon niveau
       </button>
     </div>
   )
@@ -712,7 +748,6 @@ function GradeScreen({ name, group, set, answers, onRecord, onBack, onRetry }) {
   const tier = getTier(percent)
   const dateStr = new Date().toLocaleString('fr-FR')
   const doneRef = useRef(false)
-  const [showEn, setShowEn] = useState(false)
 
   useEffect(() => {
     if (doneRef.current) return
@@ -771,33 +806,6 @@ function GradeScreen({ name, group, set, answers, onRecord, onBack, onRetry }) {
       )}
 
       <TierLadder currentCls={tier.cls} />
-
-      <details className="corrige" open>
-        <summary>Voir le corrigé</summary>
-        <div className="set-header set-header-tools">
-          <button
-            type="button"
-            className="link-btn set-lang"
-            onClick={() => setShowEn((s) => !s)}
-          >
-            🇬🇧 {showEn ? 'français' : 'anglais'}
-          </button>
-        </div>
-        <div className="cards corrige-cards">
-          {set.cards.map((card, ci) => (
-            <CardView
-              key={ci}
-              card={card}
-              cardIdx={ci}
-              number={ci + 1}
-              answers={answers}
-              setAnswer={() => {}}
-              checked
-              showEn={showEn}
-            />
-          ))}
-        </div>
-      </details>
 
       <div className="end-actions">
         <button className="btn btn-primary" onClick={onBack}>

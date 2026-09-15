@@ -1237,7 +1237,21 @@ h1 {
   margin-top: 12px;
 }
 
-/* Corrigé sur l'écran de niveau */
+/* Écran de correction (avant le niveau) */
+.corr-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.corr-title {
+  font-size: 18px;
+  margin: 0;
+  color: var(--primary-dark);
+}
+
+/* Corrigé sur l'écran de niveau (ancien — conservé au cas où) */
 .corrige {
   text-align: left;
   margin: 4px 0 18px;
