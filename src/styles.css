@@ -974,6 +974,18 @@ h1 {
   font-weight: 700;
   color: var(--muted);
 }
+.set-item.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #f4f4f6;
+}
+.set-item.locked:hover {
+  border-color: var(--line);
+  box-shadow: none;
+}
+.badge-locked {
+  font-size: 18px;
+}
 .badge-links {
   font-size: 13px;
   font-weight: 800;

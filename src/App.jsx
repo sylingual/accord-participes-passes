@@ -240,21 +240,30 @@ function Menu({ name, scores, onOpen }) {
       <div className="set-list">
         {SETS.map((set) => {
           const sc = scores[set.id]
+          const locked =
+            set.requires && !set.requires.every((id) => scores[id])
           return (
             <button
               key={set.id}
-              className="set-item"
-              onClick={() => onOpen(set.id)}
+              className={`set-item ${locked ? 'locked' : ''}`}
+              onClick={() => !locked && onOpen(set.id)}
+              disabled={locked}
             >
-              <span className="set-item-icon">{set.icon}</span>
+              <span className="set-item-icon">{locked ? '🔒' : set.icon}</span>
               <span className="set-item-main">
                 <span className="set-item-title">
                   {set.num}. {set.title}
                 </span>
-                <span className="set-item-sub">{set.subtitle}</span>
+                <span className="set-item-sub">
+                  {locked
+                    ? 'Termine les checks 2, 3 et 4 pour débloquer'
+                    : set.subtitle}
+                </span>
               </span>
               <span className="set-item-badge">
-                {set.kind === 'links' ? (
+                {locked ? (
+                  <span className="badge-locked">🔒</span>
+                ) : set.kind === 'links' ? (
                   <span className="badge-links">{set.links.length} liens 🔗</span>
                 ) : sc ? (
                   <span className={`badge-grade ${sc.cls}`}>
@@ -622,7 +631,17 @@ function SegmentedCard({ card, cardIdx, answers, setAnswer, checked, showEn }) {
       {card.instruction && <p className="seg-instruction">{card.instruction}</p>}
       <p className="seg-text">
         {card.segments.map((s, i) => {
-          if (typeof s === 'string') return <Fragment key={i}>{s}</Fragment>
+          if (typeof s === 'string')
+            return (
+              <Fragment key={i}>
+                {s.split('\n').map((part, k) => (
+                  <Fragment key={k}>
+                    {k > 0 && <br />}
+                    {part}
+                  </Fragment>
+                ))}
+              </Fragment>
+            )
           bi += 1
           const idx = bi
           const key = `${cardIdx}:${idx}`

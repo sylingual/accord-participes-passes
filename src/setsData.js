@@ -305,7 +305,173 @@ const check4Cards = [
     'Elle s’est **lavé** les mains (COD après → pas d’accord).', 'She **washed** her hands (object after → no agreement).'),
 ]
 
-// --- Les 5 SETS ----------------------------------------------------------------
+// --- SET 1 — Passé composé ou imparfait ? (menus déroulants) -------------------
+const TENSE_TIP =
+  'Imparfait = habitude, description, action qui dure (avant, souvent, tous les jours, le lundi…). Passé composé = action précise, ponctuelle, terminée (hier, cette année, une fois…).'
+const TENSE_TIP_EN =
+  'Imperfect = habit, description, ongoing action (before, often, every day…). Passé composé = a precise, one-off, completed action (yesterday, once, that day…).'
+
+// Chaque carte = une paire de phrases (même verbe, deux temps différents).
+const tcard = (segments) => ({
+  kind: 'segmented',
+  tip: TENSE_TIP,
+  tipEn: TENSE_TIP_EN,
+  segments,
+})
+
+const check1Cards = [
+  tcard([
+    'Avant, ils ', sel(['sont partis', 'partaient'], 'partaient'),
+    ' en vacances en août.\nCette année, ils ',
+    sel(['sont partis', 'partaient'], 'sont partis'), ' en juin ?',
+  ]),
+  tcard([
+    'Sophie ', sel(['a étudié', 'étudiait'], 'étudiait'),
+    ' tous les soirs.\nElle ', sel(['a étudié', 'étudiait'], 'a étudié'),
+    ' jusqu’en mars dernier.',
+  ]),
+  tcard([
+    'Hier soir, j’', sel(['ai regardé', 'regardais'], 'ai regardé'),
+    ' un dessin animé.\nPetit, je ', sel(['ai regardé', 'regardais'], 'regardais'),
+    ' souvent des dessins animés.',
+  ]),
+  tcard([
+    'Vous ', sel(['vous êtes rencontrés', 'vous rencontriez'], 'vous êtes rencontrés'),
+    ' jeudi.\nVous ',
+    sel(['vous êtes rencontrés', 'vous rencontriez'], 'vous rencontriez'),
+    ' le jeudi.',
+  ]),
+  tcard([
+    'Au moment où nous ', sel(['sommes sortis', 'sortions'], 'sommes sortis'),
+    ', il ', sel(['est tombé', 'tombait'], 'est tombé'),
+    '.\nChaque jour où nous ', sel(['sommes sortis', 'sortions'], 'sortions'),
+    ', il ', sel(['est tombé', 'tombait'], 'tombait'), '.',
+  ]),
+  tcard([
+    'Le 2 juin 2016, nous ', sel(['avons déjeuné', 'déjeunions'], 'avons déjeuné'),
+    ' à la terrasse du café de la Paix.\nTous les 2 juin, nous ',
+    sel(['avons déjeuné', 'déjeunions'], 'déjeunions'),
+    ' à la terrasse du café de la Paix.',
+  ]),
+  tcard([
+    'Pendant la guerre, la vie ', sel(['a été', 'était'], 'était'),
+    ' difficile.\nDe 1939 à 1945, la vie ', sel(['a été', 'était'], 'a été'),
+    ' difficile.',
+  ]),
+  tcard([
+    'Cet été, nous ', sel(['avons repeint', 'repeignions'], 'avons repeint'),
+    ' tous les volets de la maison.\nTous les étés, nous ',
+    sel(['avons repeint', 'repeignions'], 'repeignions'),
+    ' les volets de la maison.',
+  ]),
+  tcard([
+    'Pendant leur enfance, Nicolas et Pierre ', sel(['ont eu', 'avaient'], 'avaient'),
+    ' les cheveux teints en rouge.\nUne fois dans leur vie, Nicolas et Pierre ',
+    sel(['ont eu', 'avaient'], 'ont eu'), ' les cheveux teints en rouge.',
+  ]),
+  tcard([
+    'J’', sel(['ai lu', 'lisais'], 'ai lu'),
+    ' au moins vingt fois à mes enfants l’histoire du Petit Chaperon Rouge.\nJe ',
+    sel(['ai lu', 'lisais'], 'lisais'),
+    ' toujours à mes enfants l’histoire du Petit Chaperon Rouge.',
+  ]),
+  tcard([
+    'La dernière fois qu’il ', sel(['est venu', 'venait'], 'est venu'),
+    ' à Nancy, il nous ', sel(['a téléphoné', 'téléphonait'], 'a téléphoné'),
+    '.\nChaque fois qu’il ', sel(['est venu', 'venait'], 'venait'),
+    ' à Nancy, il nous ', sel(['a téléphoné', 'téléphonait'], 'téléphonait'), '.',
+  ]),
+  tcard([
+    'J’', sel(['ai étudié', 'étudiais'], 'ai étudié'),
+    ' le français pendant longtemps !\nAu lycée, j’',
+    sel(['ai étudié', 'étudiais'], 'étudiais'), ' le français.',
+  ]),
+  tcard([
+    'Nous ', sel(['avons roulé', 'roulions'], 'roulions'),
+    ' depuis plus de six heures.\nNous ', sel(['avons roulé', 'roulions'], 'avons roulé'),
+    ' plus de six heures sans nous arrêter.',
+  ]),
+  tcard([
+    'Les étudiants ', sel(['ont fini', 'finissaient'], 'ont fini'),
+    ' leurs exercices.\nSouvent, les étudiants ',
+    sel(['ont fini', 'finissaient'], 'finissaient'), ' leurs exercices.',
+  ]),
+]
+
+// --- SET 6 — Petit test final (texte libre) -----------------------------------
+const fcard = (segments) => ({
+  kind: 'segmented',
+  tip: TENSE_TIP,
+  tipEn: TENSE_TIP_EN,
+  segments,
+})
+
+const finalCards = [
+  fcard([
+    'Ce matin, j’', txt('ai ouvert', 'ouvrir'),
+    ' toutes les fenêtres parce qu’il ', txt('faisait', 'faire'), ' très beau.',
+  ]),
+  fcard([
+    'Quand j’étais petit, j’', txt('avais', 'avoir'), ' un vélo mais j’',
+    txt('allais', 'aller'), ' toujours à l’école en bus.',
+  ]),
+  fcard([
+    'Les enfants ', txt('ont regardé', 'regarder'),
+    ' la télévision hier soir parce qu’il y ', txt('avait', 'avoir'),
+    ' un très joli film.',
+  ]),
+  fcard([
+    'L’année dernière, nous ', txt('avons acheté', 'acheter'),
+    ' un nouveau bateau qui ', txt('était', 'être'), ' blanc et bleu.',
+  ]),
+  fcard([
+    'Nous ', txt('avons offert', 'offrir'),
+    ' un cadeau à François parce que c’', txt('était', 'être'), ' son anniversaire.',
+  ]),
+  fcard([
+    'Alain ', txt('a bu', 'boire'), ' un grand verre de bière, parce qu’il ',
+    txt('avait', 'avoir'), ' soif.',
+  ]),
+  fcard([
+    'Ce matin, j’', txt('ai pris', 'prendre'), ' mon parapluie, parce qu’il ',
+    txt('pleuvait', 'pleuvoir'), '.',
+  ]),
+  fcard([
+    'Paul ', txt('mangeait', 'manger'),
+    ' un gâteau au chocolat énorme quand son frère ', txt('est arrivé', 'arriver'),
+    '.',
+  ]),
+  fcard([
+    'Vendredi dernier, je ', txt('suis allé', 'aller'),
+    ' au théâtre pour voir un spectacle. C’', txt('était', 'être'), ' magnifique.',
+  ]),
+  fcard([
+    'Hier, Gabriel ', txt('était', 'être'), ' au lit parce qu’il ',
+    txt('avait', 'avoir'), ' très mal à la tête.',
+  ]),
+  fcard([
+    'Le dimanche, ma mère ', txt('lisait', 'lire'), ' un livre tandis que je ',
+    txt('jouais', 'jouer'), ' à l’ordinateur dans ma chambre.',
+  ]),
+  fcard([
+    'J’', txt('étais', 'être'), ' chez le dentiste parce que j’',
+    txt('avais', 'avoir'), ' mal aux dents.',
+  ]),
+  fcard([
+    'J’', txt('ai mangé', 'manger'),
+    ' un croissant et une brioche parce que j’', txt('avais', 'avoir'), ' faim !',
+  ]),
+  fcard([
+    'Quand la bibliothèque ', txt('était', 'être'), ' fermée, il ',
+    txt('allait', 'aller'), ' travailler dans un bar.',
+  ]),
+  fcard([
+    'Ils ', txt('sont sortis', 'sortir'), ' parce qu’ils ',
+    txt('voulaient', 'vouloir'), ' danser.',
+  ]),
+]
+
+// --- Les SETS ------------------------------------------------------------------
 export const SETS = [
   {
     id: 'imparfait',
@@ -313,17 +479,10 @@ export const SETS = [
     icon: '🕰️',
     title: 'Passé composé ou imparfait ?',
     subtitle: 'Check 1 : choisir le bon temps',
-    kind: 'links',
+    kind: 'exercises',
     intro:
-      "Pour t'entraîner à différencier le passé composé de l'imparfait, fais ces quiz en autonomie. Tu peux les refaire autant de fois que nécessaire ! 😊",
-    links: [
-      { url: 'https://progress.lawlessfrench.com/kwiz/take/2581800', title: 'Conte de fées' },
-      { url: 'https://progress.lawlessfrench.com/kwiz/take/1702841', title: 'Dimanche à Chartres' },
-      { url: 'https://progress.lawlessfrench.com/kwiz/take/3160218', title: 'Mamie Gâteau' },
-      { url: 'https://progress.lawlessfrench.com/kwiz/take/1782360', title: 'Mon jour férié' },
-      { url: 'https://progress.lawlessfrench.com/kwiz/take/6031271', title: 'Pendant le confinement' },
-      { url: 'https://progress.lawlessfrench.com/kwiz/take/2196089', title: 'Une ville magique' },
-    ],
+      'Chaque paire de phrases utilise un temps différent. Choisis la bonne forme : passé composé (action précise, ponctuelle) ou imparfait (habitude, description).',
+    cards: check1Cards,
   },
   {
     id: 'auxiliaire',
@@ -370,11 +529,29 @@ export const SETS = [
     intro:
       'Envie de t’entraîner encore ? Voici d’autres exercices en ligne. Tu peux les refaire autant de fois que tu veux !',
     links: [
+      { url: 'https://progress.lawlessfrench.com/kwiz/take/2581800', title: 'Passé composé vs imparfait : Conte de fées (Lawless French)' },
+      { url: 'https://progress.lawlessfrench.com/kwiz/take/1702841', title: 'Passé composé vs imparfait : Dimanche à Chartres (Lawless French)' },
+      { url: 'https://progress.lawlessfrench.com/kwiz/take/3160218', title: 'Passé composé vs imparfait : Mamie Gâteau (Lawless French)' },
+      { url: 'https://progress.lawlessfrench.com/kwiz/take/1782360', title: 'Passé composé vs imparfait : Mon jour férié (Lawless French)' },
+      { url: 'https://progress.lawlessfrench.com/kwiz/take/6031271', title: 'Passé composé vs imparfait : Pendant le confinement (Lawless French)' },
+      { url: 'https://progress.lawlessfrench.com/kwiz/take/2196089', title: 'Passé composé vs imparfait : Une ville magique (Lawless French)' },
       { url: 'https://www.ecolesuisse-fle.fr/jeux-de-grammaire-accord-du-participe-passe-quiz-progressif', title: 'Accord du participe passé — quiz progressif (École Suisse FLE)' },
       { url: 'https://www.lumni.fr/quiz/comment-accorder-le-participe-passe-employe-avec-etre-avoir', title: 'Accorder le participe passé avec être / avoir (Lumni)' },
       { url: 'https://lesparticipespasses.ccdmd.qc.ca/', title: 'Les participes passés — Mirza chez le vétérinaire (CCDMD)' },
       { url: 'https://exercices.alloprof.qc.ca/app/client.php?demande=questionnaire_debuter&projet=11&questionnaire=126&evaluation=81&mode=', title: 'Choix de l’auxiliaire être / avoir (Alloprof)' },
       { url: 'https://www.lefrancais.be/grammaire/participe-passe/participe-passe-ex1.html', title: 'L’accord du participe passé — exercice 1 (Le Français)' },
     ],
+  },
+  {
+    id: 'final',
+    num: 6,
+    icon: '🎓',
+    title: 'Petit test final',
+    subtitle: 'Le grand test : passé composé ou imparfait ?',
+    kind: 'exercises',
+    requires: ['auxiliaire', 'participe', 'accord'],
+    intro:
+      'Le grand test ! Conjugue chaque verbe au passé composé ou à l’imparfait selon le contexte. Écris la forme complète (ex. « ai ouvert », « faisait »).',
+    cards: finalCards,
   },
 ]
