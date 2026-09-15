@@ -455,30 +455,8 @@ const finalCards = [
     txt('allais', 'aller'), ' toujours à l’école en bus.',
   ]),
   fcard([
-    'Les enfants ', txt('ont regardé', 'regarder'),
-    ' la télévision hier soir parce qu’il y ', txt('avait', 'avoir'),
-    ' un très joli film.',
-  ]),
-  fcard([
-    'L’année dernière, nous ', txt('avons acheté', 'acheter'),
-    ' un nouveau bateau qui ', txt('était', 'être'), ' blanc et bleu.',
-  ]),
-  fcard([
-    'Nous ', txt('avons offert', 'offrir'),
-    ' un cadeau à François parce que c’', txt('était', 'être'), ' son anniversaire.',
-  ]),
-  fcard([
-    'Alain ', txt('a bu', 'boire'), ' un grand verre de bière, parce qu’il ',
-    txt('avait', 'avoir'), ' soif.',
-  ]),
-  fcard([
     'Ce matin, j’', txt('ai pris', 'prendre'), ' mon parapluie, parce qu’il ',
     txt('pleuvait', 'pleuvoir'), '.',
-  ]),
-  fcard([
-    'Paul ', txt('mangeait', 'manger'),
-    ' un gâteau au chocolat énorme quand son frère ', txt('est arrivé', 'arriver'),
-    '.',
   ]),
   fcard([
     'Vendredi dernier, je ', txt('suis allé', 'aller'),
@@ -491,22 +469,6 @@ const finalCards = [
   fcard([
     'Le dimanche, ma mère ', txt('lisait', 'lire'), ' un livre tandis que je ',
     txt('jouais', 'jouer'), ' à l’ordinateur dans ma chambre.',
-  ]),
-  fcard([
-    'J’', txt('étais', 'être'), ' chez le dentiste parce que j’',
-    txt('avais', 'avoir'), ' mal aux dents.',
-  ]),
-  fcard([
-    'J’', txt('ai mangé', 'manger'),
-    ' un croissant et une brioche parce que j’', txt('avais', 'avoir'), ' faim !',
-  ]),
-  fcard([
-    'Quand la bibliothèque ', txt('était', 'être'), ' fermée, il ',
-    txt('allait', 'aller'), ' travailler dans un bar.',
-  ]),
-  fcard([
-    'Ils ', txt('sont sortis', 'sortir'), ' parce qu’ils ',
-    txt('voulaient', 'vouloir'), ' danser.',
   ]),
 ]
 
