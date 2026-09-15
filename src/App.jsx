@@ -408,6 +408,7 @@ function ExerciseRunner({ set, name, group, onRecord, onBack }) {
     return (
       <div ref={topRef}>
         <ProgressBar value={idx} total={cards.length} />
+        {idx === 0 && set.intro && <p className="links-intro">💡 {set.intro}</p>}
         <div className="cards">
           <CardView
             key={idx}

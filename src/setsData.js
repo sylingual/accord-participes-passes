@@ -561,6 +561,7 @@ export const SETS = [
     title: 'Le bon participe passé',
     subtitle: 'Check 3 : la bonne forme (-é / -i / -u)',
     kind: 'exercises',
+    paced: true, // 2 slides : la liste de verbes, puis le texte de Jean
     rewardVideo: 'jhqJY0ll1Wo', // chanson récompense (niveau Légende)
     intro:
       'Écris le participe passé de chaque verbe. Pense aux terminaisons -ER → -é, -IR → -i, -RE → -u… et aux exceptions !',
