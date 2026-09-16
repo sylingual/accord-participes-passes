@@ -13,11 +13,30 @@
  *   5. Autorise l'accès si demandé, puis copie l'URL (…/exec).
  *   6. Colle cette URL dans src/statsConfig.js (champ sheetsUrl).
  *
- * Deux onglets alimentés automatiquement :
- *   - « Résultats » : Horodatage · Élève · Groupe · Set · Score · Réussite (%) · Niveau.
+ * Onglet « Codes » (À CRÉER TOI-MÊME, une fois) — colonnes :
+ *     Code personnel | Prénom | Nom | Groupe
+ *   Colle-y les codes (voir codes-personnels.txt) et remplis prénom/nom/groupe.
+ *   Le script y retrouve le prénom + nom correspondant au code de l'élève.
+ *
+ * Onglets alimentés automatiquement :
+ *   - « Résultats » : Horodatage · Code personnel · Prénom · Nom · Groupe · Set ·
+ *       Score · Réussite (%) · Niveau  (Prénom/Nom/Groupe repris de l'onglet Codes).
  *   - « Réactions » : Exercice · 👍 J'aime · 👎 J'ai pas aimé  (COMPTEUR GLOBAL,
  *     sans nom d'élève — chaque exercice a sa ligne, les compteurs s'incrémentent).
  */
+// Retrouve prénom / nom / groupe à partir du code, dans l'onglet « Codes ».
+function lookupCode(ss, code) {
+  var sh = ss.getSheetByName('Codes');
+  if (!sh || sh.getLastRow() < 2) return { prenom: '', nom: '', groupe: '' };
+  var vals = sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues();
+  var target = String(code).trim().toUpperCase();
+  for (var i = 0; i < vals.length; i++) {
+    if (String(vals[i][0]).trim().toUpperCase() === target) {
+      return { prenom: vals[i][1] || '', nom: vals[i][2] || '', groupe: vals[i][3] || '' };
+    }
+  }
+  return { prenom: '', nom: '', groupe: '' };
+}
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -63,7 +82,9 @@ function doPost(e) {
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         'Horodatage',
-        'Élève',
+        'Code personnel',
+        'Prénom',
+        'Nom',
         'Groupe',
         'Set',
         'Score',
@@ -71,10 +92,24 @@ function doPost(e) {
         'Niveau',
       ]);
     }
+
+    var code = data.code || '';
+    var prenom = data.name || ''; // ancien mode (prénom saisi) en secours
+    var nom = '';
+    var groupe = data.group || '';
+    if (code) {
+      var info = lookupCode(ss, code);
+      prenom = info.prenom;
+      nom = info.nom;
+      if (info.groupe) groupe = info.groupe;
+    }
+
     sheet.appendRow([
       new Date(),
-      data.name || '',
-      data.group || '',
+      code,
+      prenom,
+      nom,
+      groupe,
       data.set || '',
       data.score || '',
       data.percent != null ? data.percent + '%' : '',

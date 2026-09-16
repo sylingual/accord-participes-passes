@@ -81,30 +81,43 @@ function saveState(name, data) {
 // ---------------------------------------------------------------------------
 // Application
 // ---------------------------------------------------------------------------
+// Mode de connexion : 'code' = code personnel (progression sauvegardée) ;
+// 'name' = ancien écran prénom + groupe, GARDÉ pour le futur (changer ici pour
+// le réactiver).
+const LOGIN_MODE = 'code'
+
 export default function App() {
   const [phase, setPhase] = useState('welcome') // welcome | menu | set
-  const [name, setName] = useState('')
-  const [group, setGroup] = useState('') // '1' | '2'
+  const [code, setCode] = useState('') // code personnel (mode 'code')
+  const [name, setName] = useState('') // ancien mode 'name'
+  const [group, setGroup] = useState('') // ancien mode 'name' : '1' | '2'
   const [scores, setScores] = useState({}) // { setId: {correct, answered, percent, grade, cls, date} }
   const [linkReactions, setLinkReactions] = useState({}) // { url: 'up' | 'down' }
   const [currentSetId, setCurrentSetId] = useState(null)
 
+  const codeMode = LOGIN_MODE === 'code'
+  const identity = (codeMode ? code : name).trim()
+  // Infos jointes à chaque résultat envoyé au Google Sheet.
+  const idInfo = codeMode
+    ? { code: identity }
+    : { name: identity, group: group ? `Groupe ${group}` : '' }
+
   function startSession(e) {
     e.preventDefault()
-    if (!name.trim() || !group) return
-    const saved = loadState(name)
+    if (codeMode ? !code.trim() : !name.trim() || !group) return
+    const saved = loadState(identity)
     if (saved) {
       setScores(saved.scores || {})
       setLinkReactions(saved.linkReactions || {})
-      if (saved.group && !group) setGroup(saved.group)
+      if (!codeMode && saved.group && !group) setGroup(saved.group)
     }
     setPhase('menu')
   }
 
   useEffect(() => {
-    if (phase !== 'welcome' && name.trim())
-      saveState(name, { scores, linkReactions, group })
-  }, [scores, linkReactions, group, phase, name])
+    if (phase !== 'welcome' && identity)
+      saveState(identity, { scores, linkReactions, group })
+  }, [scores, linkReactions, group, phase, identity])
 
   // Réaction 👍/👎 sur un lien : on n'enregistre PAS qui a cliqué, seulement
   // un compteur global (delta) par exercice dans le Google Sheet.
@@ -142,18 +155,21 @@ export default function App() {
   return (
     <div className="page">
       <div className="card">
-        {phase === 'welcome' && (
-          <Welcome
-            name={name}
-            setName={setName}
-            group={group}
-            setGroup={setGroup}
-            onStart={startSession}
-          />
-        )}
+        {phase === 'welcome' &&
+          (codeMode ? (
+            <WelcomeCode code={code} setCode={setCode} onStart={startSession} />
+          ) : (
+            <WelcomeNameGroup
+              name={name}
+              setName={setName}
+              group={group}
+              setGroup={setGroup}
+              onStart={startSession}
+            />
+          ))}
         {phase === 'menu' && (
           <Menu
-            name={name}
+            who={identity}
             scores={scores}
             onOpen={(id) => {
               setCurrentSetId(id)
@@ -164,8 +180,8 @@ export default function App() {
         {phase === 'set' && currentSet && (
           <SetView
             set={currentSet}
-            name={name}
-            group={group}
+            who={identity}
+            idInfo={idInfo}
             linkReactions={linkReactions}
             onReact={reactLink}
             onRecord={recordScore}
@@ -177,16 +193,55 @@ export default function App() {
   )
 }
 
-function Welcome({ name, setName, group, setGroup, onStart }) {
+// Écran d'accueil : code personnel (progression sauvegardée).
+function WelcomeCode({ code, setCode, onStart }) {
   return (
     <form onSubmit={onStart} className="welcome">
       <h1>Deviens une légende du passé composé !</h1>
       <p className="lead">
-        Bienvenue à cet atelier <strong>autonome</strong> sur le passé composé. 
-        Plus tu t'entraînes, plus ça devient facile et automatique ! Pense à consulter ton cours si ça t'aide. Sauras-tu arriver jusqu'au niveau Légende ? 
+        Bienvenue à cet atelier <strong>autonome</strong> sur le passé composé.
+        Plus tu t'entraînes, plus ça devient facile et automatique ! Pense à
+        consulter ton cours si ça t'aide. Sauras-tu arriver jusqu'au niveau
+        Légende ?
       </p>
       <p className="lead">
-        (Attention : si tu quittes la fenêtre, tes données ne sont pas sauvegardées)
+        Entre ton <strong>code personnel</strong> : il garde ta progression et
+        tes scores quand tu reviens (sur le même appareil).
+      </p>
+      <label className="field">
+        <span>Ton code personnel :</span>
+        <input
+          type="text"
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="exemple : PP-AB12"
+          autoFocus
+          maxLength={20}
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </label>
+      <button
+        type="submit"
+        className="btn btn-primary"
+        disabled={!code.trim()}
+      >
+        Commencer →
+      </button>
+    </form>
+  )
+}
+
+// Ancien écran (prénom + groupe) — GARDÉ pour le futur (voir LOGIN_MODE).
+function WelcomeNameGroup({ name, setName, group, setGroup, onStart }) {
+  return (
+    <form onSubmit={onStart} className="welcome">
+      <h1>Deviens une légende du passé composé !</h1>
+      <p className="lead">
+        Bienvenue à cet atelier <strong>autonome</strong> sur le passé composé.
+        Plus tu t'entraînes, plus ça devient facile et automatique ! Pense à
+        consulter ton cours si ça t'aide. Sauras-tu arriver jusqu'au niveau
+        Légende ?
       </p>
       <label className="field">
         <span>Ton prénom + Nom (initiale) :</span>
@@ -232,10 +287,10 @@ function Welcome({ name, setName, group, setGroup, onStart }) {
 // ---------------------------------------------------------------------------
 // Menu des sets
 // ---------------------------------------------------------------------------
-function Menu({ name, scores, onOpen }) {
+function Menu({ who, scores, onOpen }) {
   return (
     <div className="menu">
-      <h1 className="menu-title">Bonjour {name} 👋</h1>
+      <h1 className="menu-title">Bonjour {who} 👋</h1>
       <p className="lead">Choisis un set d’exercices :</p>
       <div className="set-list">
         {SETS.map((set) => {
@@ -287,7 +342,7 @@ function Menu({ name, scores, onOpen }) {
 // ---------------------------------------------------------------------------
 // Vue d'un set (aiguillage)
 // ---------------------------------------------------------------------------
-function SetView({ set, name, group, linkReactions, onReact, onRecord, onBack }) {
+function SetView({ set, who, idInfo, linkReactions, onReact, onRecord, onBack }) {
   return (
     <div className="setview">
       <button className="back-link" onClick={onBack}>
@@ -302,8 +357,8 @@ function SetView({ set, name, group, linkReactions, onReact, onRecord, onBack })
       ) : (
         <ExerciseRunner
           set={set}
-          name={name}
-          group={group}
+          who={who}
+          idInfo={idInfo}
           onRecord={onRecord}
           onBack={onBack}
         />
@@ -363,7 +418,7 @@ function LinksView({ set, linkReactions, onReact }) {
 // ---------------------------------------------------------------------------
 // Moteur d'exercices (noté)
 // ---------------------------------------------------------------------------
-function ExerciseRunner({ set, name, group, onRecord, onBack }) {
+function ExerciseRunner({ set, who, idInfo, onRecord, onBack }) {
   const cards = set.cards
   const paced = !!set.paced
   const [answers, setAnswers] = useState({})
@@ -391,8 +446,8 @@ function ExerciseRunner({ set, name, group, onRecord, onBack }) {
   if (graded) {
     return (
       <GradeScreen
-        name={name}
-        group={group}
+        who={who}
+        idInfo={idInfo}
         set={set}
         answers={answers}
         onRecord={onRecord}
@@ -734,7 +789,7 @@ function SegmentedCard({ card, cardIdx, answers, setAnswer, checked, showEn }) {
 // ---------------------------------------------------------------------------
 // Écran de niveau (grade)
 // ---------------------------------------------------------------------------
-function GradeScreen({ name, group, set, answers, onRecord, onBack, onRetry }) {
+function GradeScreen({ who, idInfo, set, answers, onRecord, onBack, onRetry }) {
   let correct = 0
   let answered = 0
   set.cards.forEach((card, ci) => {
@@ -754,8 +809,7 @@ function GradeScreen({ name, group, set, answers, onRecord, onBack, onRetry }) {
     doneRef.current = true
     onRecord(set.id, correct, answered)
     logStat({
-      name,
-      group: group ? `Groupe ${group}` : '',
+      ...idInfo,
       setId: set.id,
       set: set.title,
       score: scoreStr,
@@ -775,7 +829,7 @@ function GradeScreen({ name, group, set, answers, onRecord, onBack, onRetry }) {
         {tier.emoji} {tier.name}
       </h1>
       <p className="lead">
-        {name} — set « {set.title} »
+        {who} — set « {set.title} »
       </p>
       <div className="scorebox">
         <div className="score-big">{scoreStr}</div>

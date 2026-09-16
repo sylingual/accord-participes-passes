@@ -25,23 +25,36 @@ du passé composé + un set bonus.
 
 ## Suivi des résultats (Google Sheet)
 
-À chaque set noté terminé, l'app peut ajouter une ligne dans **ton Google Sheet**
-(Horodatage · Élève · Set · Score · Réussite % · Niveau). Aucun e-mail, aucun
-serveur : ça passe par un petit **Google Apps Script**. Mise en place (~5 min) :
+Chaque élève entre un **code personnel** au démarrage : sa progression est
+sauvegardée (sur son appareil) et retrouvée quand il revient. À chaque set noté
+terminé, l'app ajoute une ligne dans **ton Google Sheet**
+(Horodatage · Code · Prénom · Nom · Groupe · Set · Score · Réussite % · Niveau).
+Aucun e-mail, aucun serveur : ça passe par un petit **Google Apps Script**.
+
+Mise en place (~5 min) :
 
 1. Crée un **Google Sheet** (vide).
-2. Menu **Extensions → Apps Script**.
-3. Efface le code et **colle le contenu de [`apps-script.gs`](apps-script.gs)**.
-4. **Déployer → Nouveau déploiement → Application web** :
+2. Ajoute un onglet **« Codes »** avec les colonnes
+   `Code personnel | Prénom | Nom | Groupe`. Colle-y les 30 codes de
+   [`codes-personnels.txt`](codes-personnels.txt) et remplis prénom / nom /
+   groupe au fur et à mesure que tu les distribues. (Le script y retrouve le
+   prénom + nom correspondant au code, et les inscrit dans « Résultats ».)
+3. Menu **Extensions → Apps Script**.
+4. Efface le code et **colle le contenu de [`apps-script.gs`](apps-script.gs)**.
+5. **Déployer → Nouveau déploiement → Application web** :
    - *Exécuter en tant que* : **Moi**
    - *Qui a accès* : **Tout le monde**
-5. Autorise l'accès, puis **copie l'URL** du déploiement (elle finit par `/exec`).
-6. Colle cette URL dans [`src/statsConfig.js`](src/statsConfig.js) (`sheetsUrl`),
+6. Autorise l'accès, puis **copie l'URL** du déploiement (elle finit par `/exec`).
+7. Colle cette URL dans [`src/statsConfig.js`](src/statsConfig.js) (`sheetsUrl`),
    puis redéploie le site.
 
-Tant que ce n'est pas fait, l'app fonctionne normalement mais n'enregistre rien.
-Les scores restent visibles dans le menu de l'élève (stockage local du
-navigateur).
+> **Codes** : distribue un code par élève (voir `codes-personnels.txt`). Tant que
+> l'onglet « Codes » n'est pas rempli, les résultats arrivent quand même (avec le
+> code), mais sans le prénom/nom. L'ancien écran « prénom + groupe » est conservé :
+> mets `LOGIN_MODE = 'name'` en haut de `src/App.jsx` pour le réactiver.
+
+Tant que le Sheet n'est pas configuré, l'app fonctionne mais n'enregistre rien ;
+les scores restent visibles dans le menu de l'élève (stockage local).
 
 ## Lancer en local
 
