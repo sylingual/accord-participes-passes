@@ -491,7 +491,7 @@ function Menu({ who, scores, onOpen }) {
                 </span>
                 <span className="set-item-sub">
                   {locked
-                    ? 'Termine les checks 1 à 4 (au moins une fois) pour débloquer'
+                    ? 'Termine les checks 1 à 3 (au moins une fois) pour débloquer'
                     : set.subtitle}
                 </span>
               </span>
