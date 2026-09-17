@@ -91,6 +91,33 @@ h2,
   max-width: 640px;
 }
 
+/* Lien d'aide en bas de page (vers Gemini) */
+.app-footer {
+  width: 100%;
+  max-width: 640px;
+  text-align: center;
+  margin-top: 16px;
+}
+.app-footer a {
+  display: inline-block;
+  color: #fff;
+  font-family: 'Poppins', 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  transition: background 0.15s, transform 0.05s;
+}
+.app-footer a:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.app-footer a:active {
+  transform: translateY(1px);
+}
+
 h1 {
   font-size: 27px;
   line-height: 1.2;

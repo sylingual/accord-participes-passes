@@ -309,6 +309,15 @@ export default function App() {
           />
         )}
       </div>
+      <footer className="app-footer">
+        <a
+          href="https://gemini.google.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          💬 J'ai des questions
+        </a>
+      </footer>
     </div>
   )
 }
