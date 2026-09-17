@@ -1,16 +1,16 @@
 Codes personnels — Atelier passé composé
 =========================================
 
-Distribue UN code à chaque élève. L'élève entre son code au démarrage :
-sa progression est sauvegardée et retrouvée quand il revient (sur le même
-navigateur / appareil).
+Distribue UN code à chaque élève (peu importe lequel — pas besoin de
+pré-assigner). À la 1re utilisation d'un code, l'élève saisit son prénom /
+nom / groupe : c'est enregistré (dans l'onglet « Codes » de ton Sheet) et
+retrouvé automatiquement les fois suivantes, même sur un autre appareil.
 
-Dans ton Google Sheet, crée un onglet « Codes » avec les colonnes :
-  Code personnel | Prénom | Nom | Groupe
-Colle les 30 codes ci-dessous dans la colonne « Code personnel », puis
-remplis Prénom / Nom / Groupe au fur et à mesure que tu les distribues.
-Les résultats (onglet « Résultats ») afficheront automatiquement le
-prénom et le nom correspondants au code.
+Dans ton Google Sheet, crée l'onglet « Codes » (colonnes :
+  Code personnel | Prénom | Nom | Groupe).
+Tu peux le laisser se remplir tout seul, ou pré-remplir certaines lignes
+(dans ce cas l'élève n'a rien à saisir pour ces codes-là). Les résultats
+(onglet « Résultats ») affichent le code, le prénom, le nom et le groupe.
 
 Les 30 codes :
 --------------

@@ -35,10 +35,12 @@ Mise en place (~5 min) :
 
 1. Crée un **Google Sheet** (vide).
 2. Ajoute un onglet **« Codes »** avec les colonnes
-   `Code personnel | Prénom | Nom | Groupe`. Colle-y les 30 codes de
-   [`codes-personnels.txt`](codes-personnels.txt) et remplis prénom / nom /
-   groupe au fur et à mesure que tu les distribues. (Le script y retrouve le
-   prénom + nom correspondant au code, et les inscrit dans « Résultats ».)
+   `Code personnel | Prénom | Nom | Groupe`. Distribue les codes de
+   [`codes-personnels.txt`](codes-personnels.txt) sans avoir à pré-assigner :
+   à la **1re utilisation** d'un code, l'élève saisit son prénom/nom/groupe et
+   le script les inscrit ici tout seul ; ensuite son profil est retrouvé
+   automatiquement (même sur un autre appareil). Tu peux aussi pré-remplir des
+   lignes si tu préfères.
 3. Menu **Extensions → Apps Script**.
 4. Efface le code et **colle le contenu de [`apps-script.gs`](apps-script.gs)**.
 5. **Déployer → Nouveau déploiement → Application web** :

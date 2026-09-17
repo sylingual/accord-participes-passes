@@ -18,6 +18,41 @@ function logStat(payload) {
   }
 }
 
+// Cherche le profil (prénom/nom/groupe) associé à un code dans le Google Sheet,
+// via JSONP (lecture possible malgré le cross-origin). Renvoie null si absent.
+function lookupProfile(code) {
+  if (!isStatsConfigured()) return Promise.resolve(null)
+  return new Promise((resolve) => {
+    const cb = 'ppcb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6)
+    const script = document.createElement('script')
+    let done = false
+    const finish = (v) => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      try {
+        delete window[cb]
+      } catch {
+        /* ignore */
+      }
+      script.remove()
+      resolve(v)
+    }
+    const timer = setTimeout(() => finish(null), 7000)
+    window[cb] = (data) => finish(data)
+    const sep = statsConfig.sheetsUrl.includes('?') ? '&' : '?'
+    script.src =
+      statsConfig.sheetsUrl +
+      sep +
+      'code=' +
+      encodeURIComponent(code) +
+      '&callback=' +
+      cb
+    script.onerror = () => finish(null)
+    document.head.appendChild(script)
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Utilitaires
 // ---------------------------------------------------------------------------
@@ -87,8 +122,11 @@ function saveState(name, data) {
 const LOGIN_MODE = 'code'
 
 export default function App() {
-  const [phase, setPhase] = useState('welcome') // welcome | menu | set
+  const [phase, setPhase] = useState('welcome') // welcome | register | menu | set
   const [code, setCode] = useState('') // code personnel (mode 'code')
+  const [profile, setProfile] = useState({ prenom: '', nom: '', groupe: '' })
+  const [checking, setChecking] = useState(false) // recherche du profil en cours
+  const [reg, setReg] = useState({ prenom: '', nom: '', group: '' }) // inscription
   const [name, setName] = useState('') // ancien mode 'name'
   const [group, setGroup] = useState('') // ancien mode 'name' : '1' | '2'
   const [scores, setScores] = useState({}) // { setId: {correct, answered, percent, grade, cls, date} }
@@ -97,27 +135,96 @@ export default function App() {
 
   const codeMode = LOGIN_MODE === 'code'
   const identity = (codeMode ? code : name).trim()
+  const who = codeMode ? profile.prenom || identity : identity
   // Infos jointes à chaque résultat envoyé au Google Sheet.
   const idInfo = codeMode
-    ? { code: identity }
+    ? {
+        code: identity,
+        prenom: profile.prenom,
+        nom: profile.nom,
+        groupe: profile.groupe,
+      }
     : { name: identity, group: group ? `Groupe ${group}` : '' }
 
-  function startSession(e) {
+  useEffect(() => {
+    if ((phase === 'menu' || phase === 'set') && identity)
+      saveState(
+        identity,
+        codeMode
+          ? { scores, linkReactions, profile }
+          : { scores, linkReactions, group }
+      )
+  }, [scores, linkReactions, group, profile, phase, identity, codeMode])
+
+  // Mode CODE : 1re fois → inscription ; sinon → profil retrouvé (local ou Sheet).
+  async function submitCode(e) {
     e.preventDefault()
-    if (codeMode ? !code.trim() : !name.trim() || !group) return
-    const saved = loadState(identity)
+    const id = code.trim()
+    if (!id) return
+    const saved = loadState(id)
     if (saved) {
       setScores(saved.scores || {})
       setLinkReactions(saved.linkReactions || {})
-      if (!codeMode && saved.group && !group) setGroup(saved.group)
+      if (saved.profile && (saved.profile.prenom || saved.profile.nom)) {
+        setProfile(saved.profile)
+        setPhase('menu')
+        return
+      }
     }
+    setChecking(true)
+    const found = await lookupProfile(id)
+    setChecking(false)
+    if (found && (found.prenom || found.nom)) {
+      const prof = {
+        prenom: found.prenom || '',
+        nom: found.nom || '',
+        groupe: found.groupe || '',
+      }
+      setProfile(prof)
+      saveState(id, {
+        scores: (saved && saved.scores) || {},
+        linkReactions: (saved && saved.linkReactions) || {},
+        profile: prof,
+      })
+      setPhase('menu')
+    } else {
+      setPhase('register')
+    }
+  }
+
+  function submitRegister(e) {
+    e.preventDefault()
+    if (!reg.prenom.trim() || !reg.group) return
+    const prof = {
+      prenom: reg.prenom.trim(),
+      nom: reg.nom.trim(),
+      groupe: `Groupe ${reg.group}`,
+    }
+    setProfile(prof)
+    const id = code.trim()
+    saveState(id, { scores, linkReactions, profile: prof })
+    logStat({
+      type: 'register',
+      code: id,
+      prenom: prof.prenom,
+      nom: prof.nom,
+      groupe: prof.groupe,
+    })
     setPhase('menu')
   }
 
-  useEffect(() => {
-    if (phase !== 'welcome' && identity)
-      saveState(identity, { scores, linkReactions, group })
-  }, [scores, linkReactions, group, phase, identity])
+  // Ancien mode (prénom + groupe) — gardé pour le futur.
+  function startSessionName(e) {
+    e.preventDefault()
+    if (!name.trim() || !group) return
+    const saved = loadState(name.trim())
+    if (saved) {
+      setScores(saved.scores || {})
+      setLinkReactions(saved.linkReactions || {})
+      if (saved.group && !group) setGroup(saved.group)
+    }
+    setPhase('menu')
+  }
 
   // Réaction 👍/👎 sur un lien : on n'enregistre PAS qui a cliqué, seulement
   // un compteur global (delta) par exercice dans le Google Sheet.
@@ -157,19 +264,32 @@ export default function App() {
       <div className="card">
         {phase === 'welcome' &&
           (codeMode ? (
-            <WelcomeCode code={code} setCode={setCode} onStart={startSession} />
+            <WelcomeCode
+              code={code}
+              setCode={setCode}
+              checking={checking}
+              onStart={submitCode}
+            />
           ) : (
             <WelcomeNameGroup
               name={name}
               setName={setName}
               group={group}
               setGroup={setGroup}
-              onStart={startSession}
+              onStart={startSessionName}
             />
           ))}
+        {phase === 'register' && (
+          <RegisterScreen
+            code={code}
+            reg={reg}
+            setReg={setReg}
+            onSubmit={submitRegister}
+          />
+        )}
         {phase === 'menu' && (
           <Menu
-            who={identity}
+            who={who}
             scores={scores}
             onOpen={(id) => {
               setCurrentSetId(id)
@@ -180,7 +300,7 @@ export default function App() {
         {phase === 'set' && currentSet && (
           <SetView
             set={currentSet}
-            who={identity}
+            who={who}
             idInfo={idInfo}
             linkReactions={linkReactions}
             onReact={reactLink}
@@ -194,7 +314,7 @@ export default function App() {
 }
 
 // Écran d'accueil : code personnel (progression sauvegardée).
-function WelcomeCode({ code, setCode, onStart }) {
+function WelcomeCode({ code, setCode, checking, onStart }) {
   return (
     <form onSubmit={onStart} className="welcome">
       <h1>Deviens une légende du passé composé !</h1>
@@ -206,7 +326,7 @@ function WelcomeCode({ code, setCode, onStart }) {
       </p>
       <p className="lead">
         Entre ton <strong>code personnel</strong> : il garde ta progression et
-        tes scores quand tu reviens (sur le même appareil).
+        tes scores quand tu reviens.
       </p>
       <label className="field">
         <span>Ton code personnel :</span>
@@ -224,9 +344,69 @@ function WelcomeCode({ code, setCode, onStart }) {
       <button
         type="submit"
         className="btn btn-primary"
-        disabled={!code.trim()}
+        disabled={!code.trim() || checking}
       >
-        Commencer →
+        {checking ? 'Vérification…' : 'Commencer →'}
+      </button>
+    </form>
+  )
+}
+
+// 1re utilisation d'un code : l'élève s'inscrit (prénom / nom / groupe).
+function RegisterScreen({ code, reg, setReg, onSubmit }) {
+  return (
+    <form onSubmit={onSubmit} className="welcome">
+      <h1>Première fois avec ce code !</h1>
+      <p className="lead">
+        Code <strong>{code.trim()}</strong>. Présente-toi : on garde ton profil
+        pour la prochaine fois.
+      </p>
+      <label className="field">
+        <span>Ton prénom :</span>
+        <input
+          type="text"
+          value={reg.prenom}
+          onChange={(e) => setReg((r) => ({ ...r, prenom: e.target.value }))}
+          placeholder="exemple : Cynthia"
+          autoFocus
+          maxLength={40}
+        />
+      </label>
+      <label className="field">
+        <span>Ton nom :</span>
+        <input
+          type="text"
+          value={reg.nom}
+          onChange={(e) => setReg((r) => ({ ...r, nom: e.target.value }))}
+          placeholder="exemple : Merenne"
+          maxLength={40}
+        />
+      </label>
+      <div className="field">
+        <span>Ton groupe :</span>
+        <div className="group-choice">
+          <button
+            type="button"
+            className={`group-btn ${reg.group === '1' ? 'on' : ''}`}
+            onClick={() => setReg((r) => ({ ...r, group: '1' }))}
+          >
+            Groupe 1
+          </button>
+          <button
+            type="button"
+            className={`group-btn ${reg.group === '2' ? 'on' : ''}`}
+            onClick={() => setReg((r) => ({ ...r, group: '2' }))}
+          >
+            Groupe 2
+          </button>
+        </div>
+      </div>
+      <button
+        type="submit"
+        className="btn btn-primary"
+        disabled={!reg.prenom.trim() || !reg.group}
+      >
+        C'est parti →
       </button>
     </form>
   )
