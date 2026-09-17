@@ -121,6 +121,13 @@ function saveState(name, data) {
 // le réactiver).
 const LOGIN_MODE = 'code'
 
+// Lien d'aide : ouvre Gemini avec une consigne pré-remplie (en anglais,
+// explications niveau A2/B1). L'élève complète avec sa vraie question.
+const HELP_PROMPT =
+  "I'm learning French at A2/B1 level. Please explain simply and clearly, with short easy examples suitable for A2/B1. My question about the passé composé and the agreement of the past participle (l'accord du participe passé) is: "
+const HELP_URL =
+  'https://gemini.google.com/app?q=' + encodeURIComponent(HELP_PROMPT)
+
 export default function App() {
   const [phase, setPhase] = useState('welcome') // welcome | register | menu | set
   const [code, setCode] = useState('') // code personnel (mode 'code')
@@ -310,11 +317,7 @@ export default function App() {
         )}
       </div>
       <footer className="app-footer">
-        <a
-          href="https://gemini.google.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href={HELP_URL} target="_blank" rel="noopener noreferrer">
           💬 J'ai des questions
         </a>
       </footer>
