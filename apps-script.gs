@@ -107,6 +107,20 @@ function doPost(e) {
       return ContentService.createTextOutput('ok');
     }
 
+    // Génération de codes élèves par un enseignant.
+    if (data.type === 'generate-codes') {
+      var gcs = ss.getSheetByName('Codes') || ss.insertSheet('Codes');
+      if (gcs.getLastRow() === 0) {
+        gcs.appendRow(['Code personnel', 'Prénom', 'Nom', 'Groupe', 'Enseignant']);
+      }
+      var gcodes = data.codes || [];
+      var genseignant = data.enseignant || '';
+      for (var gc = 0; gc < gcodes.length; gc++) {
+        gcs.appendRow([gcodes[gc], '', '', '', genseignant]);
+      }
+      return ContentService.createTextOutput('ok');
+    }
+
     var sheet = ss.getSheetByName('Résultats') || ss.getSheets()[0];
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
@@ -159,8 +173,10 @@ function doPost(e) {
 // Renvoie cb({found, prenom, nom, groupe}). Sans code : message de test.
 function doGet(e) {
   var out = { ok: true };
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
   if (e && e.parameter && e.parameter.code) {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    // Lookup élève par code personnel
     var info = lookupCode(ss, e.parameter.code);
     out = {
       found: !!(info.prenom || info.nom),
@@ -169,7 +185,80 @@ function doGet(e) {
       groupe: info.groupe,
       enseignant: info.enseignant,
     };
+
+  } else if (e && e.parameter && e.parameter.teacherLogin) {
+    // Connexion enseignant : vérifie préfixe + mot de passe dans l'onglet « Enseignants »
+    // Onglet « Enseignants » : Préfixe | Nom | Mot de passe | Groupes
+    var ts = ss.getSheetByName('Enseignants');
+    out = { ok: false };
+    if (ts && ts.getLastRow() >= 2) {
+      var prefix = String(e.parameter.teacherLogin).trim().toUpperCase();
+      var pwd = e.parameter.password || '';
+      var tvals = ts.getRange(2, 1, ts.getLastRow() - 1, 4).getValues();
+      for (var ti = 0; ti < tvals.length; ti++) {
+        if (String(tvals[ti][0]).trim().toUpperCase() === prefix &&
+            String(tvals[ti][2]).trim() === pwd) {
+          out = { ok: true, nom: tvals[ti][1] || '', groups: String(tvals[ti][3] || '') };
+          break;
+        }
+      }
+    }
+
+  } else if (e && e.parameter && e.parameter.teacherStudents) {
+    // Liste des élèves et résultats pour un enseignant (par préfixe de code)
+    var tprefix = String(e.parameter.teacherStudents).trim().toUpperCase();
+
+    // Élèves (onglet Codes)
+    var csh = ss.getSheetByName('Codes');
+    var students = [];
+    if (csh && csh.getLastRow() >= 2) {
+      var ccols = Math.max(csh.getLastColumn(), 5);
+      var cvals = csh.getRange(2, 1, csh.getLastRow() - 1, ccols).getValues();
+      for (var ci = 0; ci < cvals.length; ci++) {
+        var scode = String(cvals[ci][0]).trim().toUpperCase();
+        var sprefix = scode.split('-')[0] || '';
+        if (sprefix === tprefix) {
+          students.push({
+            code: cvals[ci][0] || '',
+            prenom: cvals[ci][1] || '',
+            nom: cvals[ci][2] || '',
+            groupe: cvals[ci][3] || ''
+          });
+        }
+      }
+    }
+
+    // Résultats (onglet Résultats)
+    var rsh = ss.getSheetByName('Résultats');
+    var rresults = [];
+    if (rsh && rsh.getLastRow() >= 2) {
+      var rcols = rsh.getLastColumn();
+      var rvals = rsh.getRange(2, 1, rsh.getLastRow() - 1, rcols).getValues();
+      // Détecter le format : 10 colonnes = avec Enseignant, 9 = sans
+      var hasEns = rcols >= 10;
+      var setIdx = hasEns ? 6 : 5;
+      var scoreIdx = hasEns ? 7 : 6;
+      var pctIdx = hasEns ? 8 : 7;
+      var gradeIdx = hasEns ? 9 : 8;
+      for (var ri = 0; ri < rvals.length; ri++) {
+        var rcode = String(rvals[ri][1]).trim().toUpperCase();
+        var rprefix = rcode.split('-')[0] || '';
+        if (rprefix === tprefix) {
+          rresults.push({
+            date: rvals[ri][0] ? new Date(rvals[ri][0]).toLocaleDateString('fr-FR') : '',
+            code: rvals[ri][1] || '',
+            set: rvals[ri][setIdx] || '',
+            score: rvals[ri][scoreIdx] || '',
+            percent: String(rvals[ri][pctIdx] || ''),
+            grade: rvals[ri][gradeIdx] || ''
+          });
+        }
+      }
+    }
+
+    out = { students: students, results: rresults };
   }
+
   var json = JSON.stringify(out);
   if (e && e.parameter && e.parameter.callback) {
     return ContentService.createTextOutput(e.parameter.callback + '(' + json + ')')
