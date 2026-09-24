@@ -28,15 +28,16 @@
 // Retrouve prénom / nom / groupe à partir du code, dans l'onglet « Codes ».
 function lookupCode(ss, code) {
   var sh = ss.getSheetByName('Codes');
-  if (!sh || sh.getLastRow() < 2) return { prenom: '', nom: '', groupe: '' };
-  var vals = sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues();
+  if (!sh || sh.getLastRow() < 2) return { prenom: '', nom: '', groupe: '', enseignant: '' };
+  var cols = sh.getLastColumn();
+  var vals = sh.getRange(2, 1, sh.getLastRow() - 1, Math.max(cols, 5)).getValues();
   var target = String(code).trim().toUpperCase();
   for (var i = 0; i < vals.length; i++) {
     if (String(vals[i][0]).trim().toUpperCase() === target) {
-      return { prenom: vals[i][1] || '', nom: vals[i][2] || '', groupe: vals[i][3] || '' };
+      return { prenom: vals[i][1] || '', nom: vals[i][2] || '', groupe: vals[i][3] || '', enseignant: vals[i][4] || '' };
     }
   }
-  return { prenom: '', nom: '', groupe: '' };
+  return { prenom: '', nom: '', groupe: '', enseignant: '' };
 }
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -83,10 +84,11 @@ function doPost(e) {
     if (data.type === 'register') {
       var cs = ss.getSheetByName('Codes') || ss.insertSheet('Codes');
       if (cs.getLastRow() === 0) {
-        cs.appendRow(['Code personnel', 'Prénom', 'Nom', 'Groupe']);
+        cs.appendRow(['Code personnel', 'Prenom', 'Nom', 'Groupe', 'Enseignant']);
       }
       var rcode = String(data.code || '').trim();
-      var crows = cs.getLastRow() > 1 ? cs.getRange(2, 1, cs.getLastRow() - 1, 4).getValues() : [];
+      var enseignant = data.enseignant || '';
+      var crows = cs.getLastRow() > 1 ? cs.getRange(2, 1, cs.getLastRow() - 1, 5).getValues() : [];
       var crow = -1;
       for (var j = 0; j < crows.length; j++) {
         if (String(crows[j][0]).trim().toUpperCase() === rcode.toUpperCase()) {
@@ -95,12 +97,12 @@ function doPost(e) {
         }
       }
       if (crow === -1) {
-        cs.appendRow([rcode, data.prenom || '', data.nom || '', data.groupe || '']);
+        cs.appendRow([rcode, data.prenom || '', data.nom || '', data.groupe || '', enseignant]);
       } else {
-        // ne remplit que les cellules vides (préserve tes saisies manuelles)
         if (!String(cs.getRange(crow, 2).getValue()).trim()) cs.getRange(crow, 2).setValue(data.prenom || '');
         if (!String(cs.getRange(crow, 3).getValue()).trim()) cs.getRange(crow, 3).setValue(data.nom || '');
         if (!String(cs.getRange(crow, 4).getValue()).trim()) cs.getRange(crow, 4).setValue(data.groupe || '');
+        if (!String(cs.getRange(crow, 5).getValue()).trim()) cs.getRange(crow, 5).setValue(enseignant);
       }
       return ContentService.createTextOutput('ok');
     }
@@ -110,26 +112,28 @@ function doPost(e) {
       sheet.appendRow([
         'Horodatage',
         'Code personnel',
-        'Prénom',
+        'Prenom',
         'Nom',
         'Groupe',
+        'Enseignant',
         'Set',
         'Score',
-        'Réussite (%)',
+        'Reussite (%)',
         'Niveau',
       ]);
     }
 
     var code = data.code || '';
-    var prenom = data.prenom || data.name || ''; // prénom envoyé (ou ancien mode)
+    var prenom = data.prenom || data.name || '';
     var nom = data.nom || '';
     var groupe = data.groupe || data.group || '';
-    // Secours : si rien n'est envoyé, on cherche dans l'onglet « Codes ».
+    var enseignant = data.enseignant || '';
     if (code && !prenom && !nom) {
       var info = lookupCode(ss, code);
       prenom = info.prenom;
       nom = info.nom;
       if (info.groupe) groupe = info.groupe;
+      if (info.enseignant) enseignant = info.enseignant;
     }
 
     sheet.appendRow([
@@ -138,6 +142,7 @@ function doPost(e) {
       prenom,
       nom,
       groupe,
+      enseignant,
       data.set || '',
       data.score || '',
       data.percent != null ? data.percent + '%' : '',
@@ -162,6 +167,7 @@ function doGet(e) {
       prenom: info.prenom,
       nom: info.nom,
       groupe: info.groupe,
+      enseignant: info.enseignant,
     };
   }
   var json = JSON.stringify(out);

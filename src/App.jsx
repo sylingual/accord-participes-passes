@@ -54,6 +54,18 @@ function lookupProfile(code) {
 }
 
 // ---------------------------------------------------------------------------
+// Multi-classe : extraction du préfixe enseignant et configuration par enseignant
+// ---------------------------------------------------------------------------
+function extractTeacherPrefix(code) {
+  const parts = (code || '').trim().split('-')
+  return parts.length >= 2 ? parts[0].toUpperCase() : ''
+}
+
+const TEACHER_CONFIG = {
+  PP: { groups: ['1', '2'] },
+}
+
+// ---------------------------------------------------------------------------
 // Utilitaires
 // ---------------------------------------------------------------------------
 function normalize(str) {
@@ -143,6 +155,8 @@ export default function App() {
   const codeMode = LOGIN_MODE === 'code'
   const identity = (codeMode ? code : name).trim()
   const who = codeMode ? profile.prenom || identity : identity
+  const teacherPrefix = codeMode ? extractTeacherPrefix(code) : ''
+  const teacherGroups = TEACHER_CONFIG[teacherPrefix]?.groups || []
   // Infos jointes à chaque résultat envoyé au Google Sheet.
   const idInfo = codeMode
     ? {
@@ -150,6 +164,7 @@ export default function App() {
         prenom: profile.prenom,
         nom: profile.nom,
         groupe: profile.groupe,
+        enseignant: teacherPrefix,
       }
     : { name: identity, group: group ? `Groupe ${group}` : '' }
 
@@ -201,11 +216,12 @@ export default function App() {
 
   function submitRegister(e) {
     e.preventDefault()
-    if (!reg.prenom.trim() || !reg.group) return
+    const hasGroups = teacherGroups.length > 0
+    if (!reg.prenom.trim() || (hasGroups && !reg.group)) return
     const prof = {
       prenom: reg.prenom.trim(),
       nom: reg.nom.trim(),
-      groupe: `Groupe ${reg.group}`,
+      groupe: reg.group ? `Groupe ${reg.group}` : '',
     }
     setProfile(prof)
     const id = code.trim()
@@ -216,6 +232,7 @@ export default function App() {
       prenom: prof.prenom,
       nom: prof.nom,
       groupe: prof.groupe,
+      enseignant: teacherPrefix,
     })
     setPhase('menu')
   }
@@ -292,6 +309,7 @@ export default function App() {
             reg={reg}
             setReg={setReg}
             onSubmit={submitRegister}
+            teacherGroups={teacherGroups}
           />
         )}
         {phase === 'menu' && (
@@ -346,7 +364,7 @@ function WelcomeCode({ code, setCode, checking, onStart }) {
           type="text"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder="exemple : PP-AB12"
+          placeholder="exemple : PP-AB12 ou ABCDE-WXYZ"
           autoFocus
           maxLength={20}
           autoComplete="off"
@@ -365,16 +383,17 @@ function WelcomeCode({ code, setCode, checking, onStart }) {
 }
 
 // 1re utilisation d'un code : l'élève s'inscrit (prénom / nom / groupe).
-function RegisterScreen({ code, reg, setReg, onSubmit }) {
+function RegisterScreen({ code, reg, setReg, onSubmit, teacherGroups }) {
+  const hasGroups = teacherGroups && teacherGroups.length > 0
   return (
     <form onSubmit={onSubmit} className="welcome">
-      <h1>Première fois avec ce code !</h1>
+      <h1>Premiere fois avec ce code !</h1>
       <p className="lead">
-        Code <strong>{code.trim()}</strong>. Présente-toi : on garde ton profil
+        Code <strong>{code.trim()}</strong>. Presente-toi : on garde ton profil
         pour la prochaine fois.
       </p>
       <label className="field">
-        <span>Ton prénom :</span>
+        <span>Ton prenom :</span>
         <input
           type="text"
           value={reg.prenom}
@@ -394,29 +413,27 @@ function RegisterScreen({ code, reg, setReg, onSubmit }) {
           maxLength={40}
         />
       </label>
-      <div className="field">
-        <span>Ton groupe :</span>
-        <div className="group-choice">
-          <button
-            type="button"
-            className={`group-btn ${reg.group === '1' ? 'on' : ''}`}
-            onClick={() => setReg((r) => ({ ...r, group: '1' }))}
-          >
-            Groupe 1
-          </button>
-          <button
-            type="button"
-            className={`group-btn ${reg.group === '2' ? 'on' : ''}`}
-            onClick={() => setReg((r) => ({ ...r, group: '2' }))}
-          >
-            Groupe 2
-          </button>
+      {hasGroups && (
+        <div className="field">
+          <span>Ton groupe :</span>
+          <div className="group-choice">
+            {teacherGroups.map((g) => (
+              <button
+                key={g}
+                type="button"
+                className={`group-btn ${reg.group === g ? 'on' : ''}`}
+                onClick={() => setReg((r) => ({ ...r, group: g }))}
+              >
+                Groupe {g}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       <button
         type="submit"
         className="btn btn-primary"
-        disabled={!reg.prenom.trim() || !reg.group}
+        disabled={!reg.prenom.trim() || (hasGroups && !reg.group)}
       >
         C'est parti →
       </button>
