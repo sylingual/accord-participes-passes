@@ -387,13 +387,13 @@ function RegisterScreen({ code, reg, setReg, onSubmit, teacherGroups }) {
   const hasGroups = teacherGroups && teacherGroups.length > 0
   return (
     <form onSubmit={onSubmit} className="welcome">
-      <h1>Premiere fois avec ce code !</h1>
+      <h1>Première fois avec ce code !</h1>
       <p className="lead">
-        Code <strong>{code.trim()}</strong>. Presente-toi : on garde ton profil
+        Code <strong>{code.trim()}</strong>. Présente-toi : on garde ton profil
         pour la prochaine fois.
       </p>
       <label className="field">
-        <span>Ton prenom :</span>
+        <span>Ton prénom :</span>
         <input
           type="text"
           value={reg.prenom}
