@@ -30,7 +30,7 @@ function jsonpCall(params) {
     const qs = Object.entries(params)
       .map(([k, v]) => k + '=' + encodeURIComponent(v))
       .join('&')
-    script.src = statsConfig.sheetsUrl + sep + qs + '&callback=' + cb
+    script.src = statsConfig.sheetsUrl + sep + qs + '&_t=' + Date.now() + '&callback=' + cb
     script.onerror = () => finish(null)
     document.head.appendChild(script)
   })
