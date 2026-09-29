@@ -1454,6 +1454,12 @@ h1 {
   letter-spacing: 0.03em;
 }
 
+.date-cell {
+  white-space: nowrap;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 .score-cell {
   text-align: center;
 }

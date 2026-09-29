@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { SETS } from './setsData'
 import { statsConfig, isStatsConfigured } from './statsConfig'
 import { supabase } from './supabaseClient'
 
@@ -99,7 +98,6 @@ export default function TeacherApp() {
   const [codeCount, setCodeCount] = useState(10)
   const [generatedCodes, setGeneratedCodes] = useState([])
   const [generating, setGenerating] = useState(false)
-  const [debugInfo, setDebugInfo] = useState('')
 
   useEffect(() => {
     const saved = loadSession()
@@ -167,9 +165,7 @@ export default function TeacherApp() {
   async function fetchData(prefix) {
     setLoading(true)
     setFetchError(false)
-    setDebugInfo('Chargement...')
     let res = null
-    // Essai 1 : fetch direct (CORS)
     try {
       const url =
         statsConfig.sheetsUrl +
@@ -179,16 +175,8 @@ export default function TeacherApp() {
         Date.now()
       const resp = await fetch(url, { redirect: 'follow' })
       res = await resp.json()
-      setDebugInfo('fetch OK: ' + JSON.stringify(res).slice(0, 120))
-    } catch (err) {
-      setDebugInfo('fetch echoue (' + err.message + '), essai JSONP...')
-      // Essai 2 : JSONP fallback
+    } catch {
       res = await jsonpCall({ teacherStudents: prefix })
-      setDebugInfo(
-        res
-          ? 'JSONP OK: ' + JSON.stringify(res).slice(0, 120)
-          : 'JSONP echoue (timeout/erreur)'
-      )
     }
     setLoading(false)
     if (res && res.students) {
@@ -259,7 +247,6 @@ export default function TeacherApp() {
             results={results}
             loading={loading}
             fetchError={fetchError}
-            debugInfo={debugInfo}
             codeCount={codeCount}
             setCodeCount={setCodeCount}
             generatedCodes={generatedCodes}
@@ -460,13 +447,21 @@ function gradeClass(grade) {
   return 'grade-apprenti'
 }
 
+function formatPercent(val) {
+  if (!val && val !== 0) return ''
+  const s = String(val)
+  if (s.includes('%')) return s
+  const n = parseFloat(s)
+  if (isNaN(n)) return s
+  return Math.round(n * 100) + '%'
+}
+
 function TeacherDashboard({
   teacher,
   students,
   results,
   loading,
   fetchError,
-  debugInfo,
   codeCount,
   setCodeCount,
   generatedCodes,
@@ -476,30 +471,19 @@ function TeacherDashboard({
   onLogout,
 }) {
   const hasGroups = !!(teacher.groups && teacher.groups.trim())
-  const setTitles = SETS.map((s) => s.title)
 
-  const studentRows = students.map((s) => {
-    const code = String(s.code).trim().toUpperCase()
-    const studentResults = results.filter(
-      (r) => String(r.code).trim().toUpperCase() === code
-    )
-    const scoresBySet = {}
-    studentResults.forEach((r) => {
-      const title = r.set || ''
-      const pct = Number(String(r.percent).replace('%', '')) || 0
-      const existing = scoresBySet[title]
-      if (
-        !existing ||
-        pct > (Number(String(existing.percent).replace('%', '')) || 0)
-      ) {
-        scoresBySet[title] = r
-      }
-    })
-    return { ...s, scoresBySet }
+  const studentMap = {}
+  students.forEach((s) => {
+    studentMap[String(s.code).trim().toUpperCase()] = s
   })
 
-  const registered = studentRows.filter((s) => s.prenom || s.nom)
-  const unused = studentRows.filter((s) => !s.prenom && !s.nom)
+  const enrichedResults = results.map((r) => {
+    const info = studentMap[String(r.code).trim().toUpperCase()] || {}
+    return { ...r, prenom: info.prenom || '', nom: info.nom || '', groupe: info.groupe || '' }
+  })
+
+  const registered = students.filter((s) => s.prenom || s.nom)
+  const unused = students.filter((s) => !s.prenom && !s.nom)
 
   return (
     <div className="teacher-dashboard">
@@ -519,12 +503,6 @@ function TeacherDashboard({
         </div>
       </div>
 
-      {debugInfo && (
-        <p style={{ fontSize: '11px', color: '#888', wordBreak: 'break-all', margin: '0 0 12px' }}>
-          {debugInfo}
-        </p>
-      )}
-
       {fetchError && (
         <div className="teacher-warning">
           <strong>Impossible de charger les donnees.</strong> Verifiez que
@@ -541,47 +519,40 @@ function TeacherDashboard({
             <span className="count-badge">{registered.length}</span>
           )}
         </h2>
-        {registered.length === 0 && !fetchError ? (
-          <p className="teacher-empty">Aucun élève inscrit pour le moment.</p>
+        {enrichedResults.length === 0 && !fetchError ? (
+          <p className="teacher-empty">Aucun résultat pour le moment.</p>
         ) : (
           <div className="table-wrap">
             <table className="teacher-table">
               <thead>
                 <tr>
+                  <th>Date</th>
                   <th>Code</th>
                   <th>Prénom</th>
                   <th>Nom</th>
                   {hasGroups && <th>Groupe</th>}
-                  {setTitles.map((t) => (
-                    <th key={t} className="set-col">
-                      {t}
-                    </th>
-                  ))}
+                  <th>Set</th>
+                  <th>Score</th>
+                  <th>Réussite</th>
+                  <th>Niveau</th>
                 </tr>
               </thead>
               <tbody>
-                {registered.map((s) => (
-                  <tr key={s.code}>
-                    <td className="code-cell">{s.code}</td>
-                    <td>{s.prenom}</td>
-                    <td>{s.nom}</td>
-                    {hasGroups && <td>{s.groupe}</td>}
-                    {setTitles.map((t) => {
-                      const r = s.scoresBySet[t]
-                      return (
-                        <td key={t} className="score-cell">
-                          {r ? (
-                            <span
-                              className={`score-pill ${gradeClass(r.grade)}`}
-                            >
-                              {r.percent} {r.grade}
-                            </span>
-                          ) : (
-                            <span className="no-score">&ndash;</span>
-                          )}
-                        </td>
-                      )
-                    })}
+                {enrichedResults.map((r, i) => (
+                  <tr key={i}>
+                    <td className="date-cell">{r.date}</td>
+                    <td className="code-cell">{r.code}</td>
+                    <td>{r.prenom}</td>
+                    <td>{r.nom}</td>
+                    {hasGroups && <td>{r.groupe}</td>}
+                    <td>{r.set}</td>
+                    <td>{r.score}</td>
+                    <td>{formatPercent(r.percent)}</td>
+                    <td>
+                      <span className={`score-pill ${gradeClass(r.grade)}`}>
+                        {r.grade}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
