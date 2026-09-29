@@ -470,6 +470,7 @@ function TeacherDashboard({
   onRefresh,
   onLogout,
 }) {
+  const [filter, setFilter] = useState('')
   const hasGroups = !!(teacher.groups && teacher.groups.trim())
 
   const studentMap = {}
@@ -481,6 +482,16 @@ function TeacherDashboard({
     const info = studentMap[String(r.code).trim().toUpperCase()] || {}
     return { ...r, prenom: info.prenom || '', nom: info.nom || '', groupe: info.groupe || '' }
   })
+
+  const needle = filter.trim().toLowerCase()
+  const filteredResults = needle
+    ? enrichedResults.filter((r) =>
+        [r.code, r.prenom, r.nom, r.groupe, r.set, r.grade, r.date]
+          .join(' ')
+          .toLowerCase()
+          .includes(needle)
+      )
+    : enrichedResults
 
   const registered = students.filter((s) => s.prenom || s.nom)
   const unused = students.filter((s) => !s.prenom && !s.nom)
@@ -522,42 +533,55 @@ function TeacherDashboard({
         {enrichedResults.length === 0 && !fetchError ? (
           <p className="teacher-empty">Aucun résultat pour le moment.</p>
         ) : (
-          <div className="table-wrap">
-            <table className="teacher-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Code</th>
-                  <th>Prénom</th>
-                  <th>Nom</th>
-                  {hasGroups && <th>Groupe</th>}
-                  <th>Set</th>
-                  <th>Score</th>
-                  <th>Réussite</th>
-                  <th>Niveau</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enrichedResults.map((r, i) => (
-                  <tr key={i}>
-                    <td className="date-cell">{r.date}</td>
-                    <td className="code-cell">{r.code}</td>
-                    <td>{r.prenom}</td>
-                    <td>{r.nom}</td>
-                    {hasGroups && <td>{r.groupe}</td>}
-                    <td>{r.set}</td>
-                    <td>{r.score}</td>
-                    <td>{formatPercent(r.percent)}</td>
-                    <td>
-                      <span className={`score-pill ${gradeClass(r.grade)}`}>
-                        {r.grade}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <input
+              type="text"
+              className="filter-input"
+              placeholder="Filtrer par nom, prénom, code, set, niveau..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+            {filteredResults.length === 0 ? (
+              <p className="teacher-empty">Aucun résultat ne correspond au filtre.</p>
+            ) : (
+              <div className="table-wrap">
+                <table className="teacher-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Code</th>
+                      <th>Prénom</th>
+                      <th>Nom</th>
+                      {hasGroups && <th>Groupe</th>}
+                      <th>Set</th>
+                      <th>Score</th>
+                      <th>Réussite</th>
+                      <th>Niveau</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredResults.map((r, i) => (
+                      <tr key={i}>
+                        <td className="date-cell">{r.date}</td>
+                        <td className="code-cell">{r.code}</td>
+                        <td>{r.prenom}</td>
+                        <td>{r.nom}</td>
+                        {hasGroups && <td>{r.groupe}</td>}
+                        <td>{r.set}</td>
+                        <td>{r.score}</td>
+                        <td>{formatPercent(r.percent)}</td>
+                        <td>
+                          <span className={`score-pill ${gradeClass(r.grade)}`}>
+                            {r.grade}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </section>
 

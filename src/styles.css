@@ -1460,6 +1460,21 @@ h1 {
   color: var(--muted);
 }
 
+.filter-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+.filter-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
 .score-cell {
   text-align: center;
 }
