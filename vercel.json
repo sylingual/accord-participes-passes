@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/enseignant", "destination": "/index.html" },
+    { "source": "/enseignant/", "destination": "/index.html" }
+  ]
+}
