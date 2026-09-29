@@ -99,6 +99,7 @@ export default function TeacherApp() {
   const [codeCount, setCodeCount] = useState(10)
   const [generatedCodes, setGeneratedCodes] = useState([])
   const [generating, setGenerating] = useState(false)
+  const [debugInfo, setDebugInfo] = useState('')
 
   useEffect(() => {
     const saved = loadSession()
@@ -166,7 +167,29 @@ export default function TeacherApp() {
   async function fetchData(prefix) {
     setLoading(true)
     setFetchError(false)
-    const res = await jsonpCall({ teacherStudents: prefix })
+    setDebugInfo('Chargement...')
+    let res = null
+    // Essai 1 : fetch direct (CORS)
+    try {
+      const url =
+        statsConfig.sheetsUrl +
+        '?teacherStudents=' +
+        encodeURIComponent(prefix) +
+        '&_t=' +
+        Date.now()
+      const resp = await fetch(url, { redirect: 'follow' })
+      res = await resp.json()
+      setDebugInfo('fetch OK: ' + JSON.stringify(res).slice(0, 120))
+    } catch (err) {
+      setDebugInfo('fetch echoue (' + err.message + '), essai JSONP...')
+      // Essai 2 : JSONP fallback
+      res = await jsonpCall({ teacherStudents: prefix })
+      setDebugInfo(
+        res
+          ? 'JSONP OK: ' + JSON.stringify(res).slice(0, 120)
+          : 'JSONP echoue (timeout/erreur)'
+      )
+    }
     setLoading(false)
     if (res && res.students) {
       setStudents(res.students)
@@ -236,6 +259,7 @@ export default function TeacherApp() {
             results={results}
             loading={loading}
             fetchError={fetchError}
+            debugInfo={debugInfo}
             codeCount={codeCount}
             setCodeCount={setCodeCount}
             generatedCodes={generatedCodes}
@@ -442,6 +466,7 @@ function TeacherDashboard({
   results,
   loading,
   fetchError,
+  debugInfo,
   codeCount,
   setCodeCount,
   generatedCodes,
@@ -493,6 +518,12 @@ function TeacherDashboard({
           </button>
         </div>
       </div>
+
+      {debugInfo && (
+        <p style={{ fontSize: '11px', color: '#888', wordBreak: 'break-all', margin: '0 0 12px' }}>
+          {debugInfo}
+        </p>
+      )}
 
       {fetchError && (
         <div className="teacher-warning">
