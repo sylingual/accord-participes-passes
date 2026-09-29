@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { SETS } from './setsData'
 import { statsConfig, isStatsConfigured } from './statsConfig'
+import { supabase } from './supabaseClient'
 
 // ---------------------------------------------------------------------------
-// Communication Google Sheet (JSONP pour les lectures, POST pour les écritures)
+// Communication Google Sheet (JSONP lectures, POST ecritures) - donnees eleves
 // ---------------------------------------------------------------------------
 function jsonpCall(params) {
   if (!isStatsConfigured()) return Promise.resolve(null)
@@ -50,7 +51,6 @@ function postData(payload) {
   }
 }
 
-// Exclut les caractères ambigus (0/O, 1/I/L)
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 function generateRandomCode(prefix) {
   let suffix = ''
@@ -89,7 +89,7 @@ function clearSession() {
 // Composant principal enseignant
 // ---------------------------------------------------------------------------
 export default function TeacherApp() {
-  const [phase, setPhase] = useState('login')
+  const [phase, setPhase] = useState('login') // login | register | dashboard
   const [teacher, setTeacher] = useState(null)
   const [students, setStudents] = useState([])
   const [results, setResults] = useState([])
@@ -112,16 +112,49 @@ export default function TeacherApp() {
   async function handleLogin(prefix, password) {
     setLoading(true)
     setError('')
-    const res = await jsonpCall({ teacherLogin: prefix, password })
+    const { data, error: rpcError } = await supabase.rpc('login_teacher', {
+      p_prefixe: prefix,
+      p_password: password,
+    })
     setLoading(false)
-    if (!res || !res.ok) {
+    if (rpcError || !data || !data.ok) {
       setError('Identifiant ou mot de passe incorrect.')
       return
     }
     const t = {
       prefix: prefix.toUpperCase(),
-      nom: res.nom || prefix,
-      groups: res.groups || '',
+      nom: data.nom || prefix,
+      groups: data.groups || '',
+    }
+    setTeacher(t)
+    saveSession(t)
+    setPhase('dashboard')
+    fetchData(t.prefix)
+  }
+
+  async function handleRegister(inviteCode, prefix, nom, password, groupes) {
+    setLoading(true)
+    setError('')
+    const { data, error: rpcError } = await supabase.rpc('register_teacher', {
+      p_invitation_code: inviteCode,
+      p_prefixe: prefix,
+      p_nom: nom,
+      p_password: password,
+      p_groupes: groupes,
+    })
+    setLoading(false)
+    if (rpcError) {
+      setError('Erreur de connexion. Veuillez reessayer.')
+      return
+    }
+    if (!data || !data.ok) {
+      setError(data?.error || 'Inscription impossible.')
+      return
+    }
+    const t = {
+      prefix: data.prefixe,
+      nom: data.nom,
+      groups: data.groupes || '',
     }
     setTeacher(t)
     saveSession(t)
@@ -173,6 +206,21 @@ export default function TeacherApp() {
             loading={loading}
             error={error}
             onLogin={handleLogin}
+            onSwitchToRegister={() => {
+              setError('')
+              setPhase('register')
+            }}
+          />
+        )}
+        {phase === 'register' && (
+          <TeacherRegister
+            loading={loading}
+            error={error}
+            onRegister={handleRegister}
+            onSwitchToLogin={() => {
+              setError('')
+              setPhase('login')
+            }}
           />
         )}
         {phase === 'dashboard' && teacher && (
@@ -196,9 +244,9 @@ export default function TeacherApp() {
 }
 
 // ---------------------------------------------------------------------------
-// Écran de connexion enseignant
+// Ecran de connexion
 // ---------------------------------------------------------------------------
-function TeacherLogin({ loading, error, onLogin }) {
+function TeacherLogin({ loading, error, onLogin, onSwitchToRegister }) {
   const [prefix, setPrefix] = useState('')
   const [password, setPassword] = useState('')
 
@@ -244,6 +292,126 @@ function TeacherLogin({ loading, error, onLogin }) {
       >
         {loading ? 'Vérification…' : 'Se connecter'}
       </button>
+      <p className="auth-switch">
+        Pas encore de compte ?{' '}
+        <button type="button" className="link-btn" onClick={onSwitchToRegister}>
+          Créer un compte
+        </button>
+      </p>
+    </form>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Ecran d'inscription (avec code d'invitation)
+// ---------------------------------------------------------------------------
+function TeacherRegister({ loading, error, onRegister, onSwitchToLogin }) {
+  const [inviteCode, setInviteCode] = useState('')
+  const [prefix, setPrefix] = useState('')
+  const [nom, setNom] = useState('')
+  const [password, setPassword] = useState('')
+  const [groupes, setGroupes] = useState('')
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (!inviteCode.trim() || !prefix.trim() || !nom.trim() || !password)
+      return
+    onRegister(
+      inviteCode.trim(),
+      prefix.trim().toUpperCase(),
+      nom.trim(),
+      password,
+      groupes.trim()
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="welcome">
+      <h1>Inscription enseignant</h1>
+      <p className="lead">
+        Vous avez reçu un code d'invitation ? Créez votre compte enseignant.
+      </p>
+      <label className="field">
+        <span>Code d'invitation :</span>
+        <input
+          type="text"
+          value={inviteCode}
+          onChange={(e) => setInviteCode(e.target.value)}
+          placeholder="Le code fourni par l'administrateur"
+          autoFocus
+          maxLength={40}
+          autoComplete="off"
+        />
+      </label>
+      <label className="field">
+        <span>Votre préfixe (2-10 lettres, unique) :</span>
+        <input
+          type="text"
+          value={prefix}
+          onChange={(e) =>
+            setPrefix(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))
+          }
+          placeholder="exemple : DUPONT"
+          maxLength={10}
+          autoComplete="off"
+        />
+        <small className="field-hint">
+          Ce préfixe apparaîtra dans les codes de vos élèves (ex:{' '}
+          {prefix || 'DUPONT'}-ABCD)
+        </small>
+      </label>
+      <label className="field">
+        <span>Votre nom :</span>
+        <input
+          type="text"
+          value={nom}
+          onChange={(e) => setNom(e.target.value)}
+          placeholder="exemple : Mme Dupont"
+          maxLength={60}
+        />
+      </label>
+      <label className="field">
+        <span>Mot de passe :</span>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          maxLength={50}
+        />
+      </label>
+      <label className="field">
+        <span>Groupes (optionnel, séparez par des virgules) :</span>
+        <input
+          type="text"
+          value={groupes}
+          onChange={(e) => setGroupes(e.target.value)}
+          placeholder="exemple : 1,2  ou laisser vide"
+          maxLength={40}
+        />
+        <small className="field-hint">
+          Si renseigné, vos élèves choisiront leur groupe à l'inscription.
+        </small>
+      </label>
+      {error && <p className="teacher-error">{error}</p>}
+      <button
+        type="submit"
+        className="btn btn-primary"
+        disabled={
+          !inviteCode.trim() ||
+          !prefix.trim() ||
+          !nom.trim() ||
+          !password ||
+          loading
+        }
+      >
+        {loading ? 'Inscription…' : "S'inscrire"}
+      </button>
+      <p className="auth-switch">
+        Déjà un compte ?{' '}
+        <button type="button" className="link-btn" onClick={onSwitchToLogin}>
+          Se connecter
+        </button>
+      </p>
     </form>
   )
 }
@@ -287,7 +455,10 @@ function TeacherDashboard({
       const title = r.set || ''
       const pct = Number(String(r.percent).replace('%', '')) || 0
       const existing = scoresBySet[title]
-      if (!existing || pct > (Number(String(existing.percent).replace('%', '')) || 0)) {
+      if (
+        !existing ||
+        pct > (Number(String(existing.percent).replace('%', '')) || 0)
+      ) {
         scoresBySet[title] = r
       }
     })
@@ -315,7 +486,6 @@ function TeacherDashboard({
         </div>
       </div>
 
-      {/* Résultats */}
       <section className="teacher-section">
         <h2>
           Résultats des élèves
@@ -372,7 +542,6 @@ function TeacherDashboard({
         )}
       </section>
 
-      {/* Génération de codes */}
       <section className="teacher-section">
         <h2>Générer des codes</h2>
         <p className="teacher-info">
@@ -426,7 +595,6 @@ function TeacherDashboard({
         )}
       </section>
 
-      {/* Codes non utilisés */}
       {unused.length > 0 && (
         <section className="teacher-section">
           <h2>

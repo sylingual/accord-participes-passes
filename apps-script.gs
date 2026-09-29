@@ -186,24 +186,6 @@ function doGet(e) {
       enseignant: info.enseignant,
     };
 
-  } else if (e && e.parameter && e.parameter.teacherLogin) {
-    // Connexion enseignant : vérifie préfixe + mot de passe dans l'onglet « Enseignants »
-    // Onglet « Enseignants » : Préfixe | Nom | Mot de passe | Groupes
-    var ts = ss.getSheetByName('Enseignants');
-    out = { ok: false };
-    if (ts && ts.getLastRow() >= 2) {
-      var prefix = String(e.parameter.teacherLogin).trim().toUpperCase();
-      var pwd = e.parameter.password || '';
-      var tvals = ts.getRange(2, 1, ts.getLastRow() - 1, 4).getValues();
-      for (var ti = 0; ti < tvals.length; ti++) {
-        if (String(tvals[ti][0]).trim().toUpperCase() === prefix &&
-            String(tvals[ti][2]).trim() === pwd) {
-          out = { ok: true, nom: tvals[ti][1] || '', groups: String(tvals[ti][3] || '') };
-          break;
-        }
-      }
-    }
-
   } else if (e && e.parameter && e.parameter.teacherStudents) {
     // Liste des élèves et résultats pour un enseignant (par préfixe de code)
     var tprefix = String(e.parameter.teacherStudents).trim().toUpperCase();
