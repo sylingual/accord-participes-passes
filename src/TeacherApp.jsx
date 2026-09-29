@@ -173,12 +173,18 @@ export default function TeacherApp() {
         encodeURIComponent(prefix) +
         '&_t=' +
         Date.now()
-      const resp = await fetch(url, { redirect: 'follow' })
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 15000)
+      const resp = await fetch(url, { redirect: 'follow', signal: ctrl.signal })
+      clearTimeout(timer)
       res = await resp.json()
     } catch {
-      res = await jsonpCall({ teacherStudents: prefix })
+      try {
+        res = await jsonpCall({ teacherStudents: prefix })
+      } catch { /* ignore */ }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
     if (res && res.students) {
       setStudents(res.students)
       setResults(res.results || [])
