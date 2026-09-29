@@ -210,8 +210,8 @@ function doGet(e) {
       }
     }
 
-    // Résultats (onglet Résultats)
-    var rsh = ss.getSheetByName('Résultats');
+    // Résultats (onglet Résultats, ou premier onglet par défaut)
+    var rsh = ss.getSheetByName('Résultats') || ss.getSheets()[0];
     var rresults = [];
     if (rsh && rsh.getLastRow() >= 2) {
       var rcols = rsh.getLastColumn();
