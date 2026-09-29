@@ -42,10 +42,10 @@ declare
   v_teacher record;
 begin
   select * into v_invite from invitations
-  where code = p_invitation_code and used = false;
+  where code = p_invitation_code;
 
   if v_invite is null then
-    return json_build_object('ok', false, 'error', 'Code d''invitation invalide ou deja utilise.');
+    return json_build_object('ok', false, 'error', 'Code d''invitation invalide.');
   end if;
 
   if exists (select 1 from enseignants where upper(prefixe) = upper(p_prefixe)) then
@@ -59,8 +59,6 @@ begin
   insert into enseignants (prefixe, nom, password_hash, groupes)
   values (upper(p_prefixe), p_nom, crypt(p_password, gen_salt('bf')), p_groupes)
   returning * into v_teacher;
-
-  update invitations set used = true, used_by = upper(p_prefixe) where id = v_invite.id;
 
   return json_build_object(
     'ok', true,
