@@ -94,6 +94,7 @@ export default function TeacherApp() {
   const [students, setStudents] = useState([])
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
+  const [fetchError, setFetchError] = useState(false)
   const [error, setError] = useState('')
   const [codeCount, setCodeCount] = useState(10)
   const [generatedCodes, setGeneratedCodes] = useState([])
@@ -164,11 +165,16 @@ export default function TeacherApp() {
 
   async function fetchData(prefix) {
     setLoading(true)
+    setFetchError(false)
     const res = await jsonpCall({ teacherStudents: prefix })
     setLoading(false)
-    if (res) {
-      setStudents(res.students || [])
+    if (res && res.students) {
+      setStudents(res.students)
       setResults(res.results || [])
+    } else {
+      setStudents([])
+      setResults([])
+      setFetchError(true)
     }
   }
 
@@ -229,6 +235,7 @@ export default function TeacherApp() {
             students={students}
             results={results}
             loading={loading}
+            fetchError={fetchError}
             codeCount={codeCount}
             setCodeCount={setCodeCount}
             generatedCodes={generatedCodes}
@@ -434,6 +441,7 @@ function TeacherDashboard({
   students,
   results,
   loading,
+  fetchError,
   codeCount,
   setCodeCount,
   generatedCodes,
@@ -486,6 +494,15 @@ function TeacherDashboard({
         </div>
       </div>
 
+      {fetchError && (
+        <div className="teacher-warning">
+          <strong>Impossible de charger les donnees.</strong> Verifiez que
+          le Google Apps Script a bien ete mis a jour et redeploye
+          (Extensions &gt; Apps Script &gt; Deployer &gt; Gerer les
+          deployments &gt; Modifier &gt; Nouvelle version &gt; Deployer).
+        </div>
+      )}
+
       <section className="teacher-section">
         <h2>
           Résultats des élèves
@@ -493,7 +510,7 @@ function TeacherDashboard({
             <span className="count-badge">{registered.length}</span>
           )}
         </h2>
-        {registered.length === 0 ? (
+        {registered.length === 0 && !fetchError ? (
           <p className="teacher-empty">Aucun élève inscrit pour le moment.</p>
         ) : (
           <div className="table-wrap">
