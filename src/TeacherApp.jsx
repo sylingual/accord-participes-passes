@@ -162,29 +162,36 @@ export default function TeacherApp() {
     fetchData(t.prefix)
   }
 
+  async function fetchOnce(url) {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 30000)
+    try {
+      const resp = await fetch(url, { redirect: 'follow', signal: ctrl.signal })
+      clearTimeout(timer)
+      return await resp.json()
+    } catch {
+      clearTimeout(timer)
+      return null
+    }
+  }
+
   async function fetchData(prefix) {
     setLoading(true)
     setFetchError(false)
-    let res = null
-    try {
-      const url =
-        statsConfig.sheetsUrl +
-        '?teacherStudents=' +
-        encodeURIComponent(prefix) +
-        '&_t=' +
-        Date.now()
-      const ctrl = new AbortController()
-      const timer = setTimeout(() => ctrl.abort(), 15000)
-      const resp = await fetch(url, { redirect: 'follow', signal: ctrl.signal })
-      clearTimeout(timer)
-      res = await resp.json()
-    } catch {
-      try {
-        res = await jsonpCall({ teacherStudents: prefix })
-      } catch { /* ignore */ }
-    } finally {
-      setLoading(false)
+    const url =
+      statsConfig.sheetsUrl +
+      '?teacherStudents=' +
+      encodeURIComponent(prefix) +
+      '&_t=' +
+      Date.now()
+    let res = await fetchOnce(url)
+    if (!res || !res.students) {
+      res = await fetchOnce(url + '&retry=1')
     }
+    if (!res || !res.students) {
+      try { res = await jsonpCall({ teacherStudents: prefix }) } catch { /* ignore */ }
+    }
+    setLoading(false)
     if (res && res.students) {
       setStudents(res.students)
       setResults(res.results || [])
