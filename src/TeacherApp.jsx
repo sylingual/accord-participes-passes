@@ -162,7 +162,20 @@ export default function TeacherApp() {
     fetchData(t.prefix)
   }
 
-  async function fetchOnce(url) {
+  async function fetchFromSupabase(prefix) {
+    const { data, error } = await supabase.rpc('get_teacher_data', { p_prefix: prefix })
+    if (error || !data || !data.students) return null
+    return data
+  }
+
+  async function fetchFromSheets(prefix) {
+    if (!isStatsConfigured()) return null
+    const url =
+      statsConfig.sheetsUrl +
+      '?teacherStudents=' +
+      encodeURIComponent(prefix) +
+      '&_t=' +
+      Date.now()
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 30000)
     try {
@@ -178,18 +191,12 @@ export default function TeacherApp() {
   async function fetchData(prefix) {
     setLoading(true)
     setFetchError(false)
-    const url =
-      statsConfig.sheetsUrl +
-      '?teacherStudents=' +
-      encodeURIComponent(prefix) +
-      '&_t=' +
-      Date.now()
-    let res = await fetchOnce(url)
+    let res = null
+    try {
+      res = await fetchFromSupabase(prefix)
+    } catch { /* ignore */ }
     if (!res || !res.students) {
-      res = await fetchOnce(url + '&retry=1')
-    }
-    if (!res || !res.students) {
-      try { res = await jsonpCall({ teacherStudents: prefix }) } catch { /* ignore */ }
+      try { res = await fetchFromSheets(prefix) } catch { /* ignore */ }
     }
     setLoading(false)
     if (res && res.students) {
@@ -219,9 +226,13 @@ export default function TeacherApp() {
       codes.push(generateRandomCode(teacher.prefix))
     }
     postData({ type: 'generate-codes', enseignant: teacher.prefix, codes })
+    supabase.rpc('generate_student_codes', {
+      p_codes: codes,
+      p_enseignant: teacher.prefix,
+    }).catch(() => {})
     setGeneratedCodes(codes)
     setGenerating(false)
-    setTimeout(() => fetchData(teacher.prefix), 3000)
+    setTimeout(() => fetchData(teacher.prefix), 1500)
   }
 
   function handleRefresh() {

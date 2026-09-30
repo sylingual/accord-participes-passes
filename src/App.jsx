@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { SETS } from './setsData'
 import { statsConfig, isStatsConfigured } from './statsConfig'
+import { supabase } from './supabaseClient'
 
-// Enregistre une ligne de résultat dans le Google Sheet (fire-and-forget).
-function logStat(payload) {
+// Enregistre dans Google Sheet (fire-and-forget, backup).
+function logSheet(payload) {
   if (!isStatsConfigured()) return
   try {
     fetch(statsConfig.sheetsUrl, {
@@ -15,6 +16,34 @@ function logStat(payload) {
     }).catch(() => {})
   } catch {
     /* ignore */
+  }
+}
+
+// Enregistre dans Supabase + Google Sheet en parallele.
+function logStat(payload) {
+  logSheet(payload)
+  if (payload.type === 'register') {
+    supabase.rpc('upsert_eleve', {
+      p_code: payload.code || '',
+      p_prenom: payload.prenom || '',
+      p_nom: payload.nom || '',
+      p_groupe: payload.groupe || '',
+      p_enseignant: payload.enseignant || '',
+    }).catch(() => {})
+  } else if (payload.type === 'reaction') {
+    // reactions stay in Google Sheets only
+  } else if (payload.code) {
+    supabase.rpc('insert_resultat', {
+      p_code: payload.code || '',
+      p_set_id: payload.setId || '',
+      p_set_title: payload.set || '',
+      p_score: payload.score || '',
+      p_correct: payload.correct || 0,
+      p_answered: payload.answered || 0,
+      p_percent: payload.percent || 0,
+      p_grade: payload.grade || '',
+      p_enseignant: payload.enseignant || '',
+    }).catch(() => {})
   }
 }
 
