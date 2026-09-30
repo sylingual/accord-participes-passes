@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration Google Sheets vers Supabase</title>
+<style>
+  :root { --bg: #f7f7fa; --card: #fff; --text: #1a1a2e; --accent: #5b4cff; --ok: #16a34a; --err: #dc2626; --muted: #777; }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 2rem 1rem; }
+  .card { max-width: 600px; margin: 0 auto; background: var(--card); border-radius: 12px; padding: 2rem; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  h1 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+  p.sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.3rem; margin-top: 1rem; }
+  input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; }
+  input:focus { outline: none; border-color: var(--accent); }
+  button { margin-top: 1.5rem; width: 100%; padding: 0.8rem; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #log { margin-top: 1.5rem; font-size: 0.85rem; line-height: 1.6; max-height: 300px; overflow-y: auto; }
+  .ok { color: var(--ok); } .err { color: var(--err); } .info { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Migration vers Supabase</h1>
+  <p class="sub">Importe les donnees existantes du Google Sheet vers Supabase. A faire une seule fois.</p>
+
+  <label>URL Google Apps Script (/exec)</label>
+  <input id="sheetsUrl" value="https://script.google.com/macros/s/AKfycbyyvdqYTyNhJ3viCOEFh3Q5BddfMq4gLvwvrugB5dW4qREN7b6SkR0cfrP_2cauc4ziFw/exec">
+
+  <label>URL Supabase</label>
+  <input id="supabaseUrl" value="https://hftpxfdxdqbilpfcgoqr.supabase.co">
+
+  <label>Cle anon Supabase</label>
+  <input id="supabaseKey" value="sb_publishable_Qf8nrCoSkByE419a0nMJTg_f-6qv4Mx">
+
+  <button id="btn" onclick="runMigration()">Lancer la migration</button>
+  <div id="log"></div>
+</div>
+
+<script>
+const log = document.getElementById('log')
+function msg(text, cls) {
+  const d = document.createElement('div')
+  d.className = cls || 'info'
+  d.textContent = text
+  log.appendChild(d)
+  log.scrollTop = log.scrollHeight
+}
+
+async function rpc(url, key, fn, params) {
+  const resp = await fetch(url + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': key,
+      'Authorization': 'Bearer ' + key,
+    },
+    body: JSON.stringify(params),
+  })
+  if (!resp.ok) {
+    const txt = await resp.text()
+    throw new Error(fn + ' : ' + resp.status + ' ' + txt)
+  }
+  return resp.json()
+}
+
+async function runMigration() {
+  const btn = document.getElementById('btn')
+  btn.disabled = true
+  log.innerHTML = ''
+
+  const sheetsUrl = document.getElementById('sheetsUrl').value.trim()
+  const supabaseUrl = document.getElementById('supabaseUrl').value.trim()
+  const supabaseKey = document.getElementById('supabaseKey').value.trim()
+
+  if (!sheetsUrl || !supabaseUrl || !supabaseKey) {
+    msg('Remplis tous les champs.', 'err')
+    btn.disabled = false
+    return
+  }
+
+  // 1. Recuperer les donnees du Google Sheet
+  msg('Recuperation des donnees du Google Sheet...')
+  let data
+  try {
+    const resp = await fetch(sheetsUrl + '?exportAll=1&_t=' + Date.now(), { redirect: 'follow' })
+    data = await resp.json()
+  } catch (err) {
+    msg('Erreur lors de la recuperation : ' + err.message, 'err')
+    msg('As-tu bien redeploye le Apps Script avec le nouveau code ?', 'err')
+    btn.disabled = false
+    return
+  }
+
+  const students = data.students || []
+  const results = data.results || []
+  msg('Trouve : ' + students.length + ' eleves, ' + results.length + ' resultats', 'ok')
+
+  if (students.length === 0 && results.length === 0) {
+    msg('Rien a migrer.', 'info')
+    btn.disabled = false
+    return
+  }
+
+  // 2. Inserer les eleves
+  let sOk = 0, sErr = 0
+  if (students.length > 0) {
+    msg('Migration des eleves...')
+    for (const s of students) {
+      try {
+        await rpc(supabaseUrl, supabaseKey, 'upsert_eleve', {
+          p_code: s.code,
+          p_prenom: s.prenom || '',
+          p_nom: s.nom || '',
+          p_groupe: s.groupe || '',
+          p_enseignant: s.enseignant || (s.code.split('-')[0] || ''),
+        })
+        sOk++
+      } catch (err) {
+        sErr++
+        if (sErr <= 3) msg('Eleve ' + s.code + ' : ' + err.message, 'err')
+      }
+    }
+    msg('Eleves : ' + sOk + ' ok' + (sErr ? ', ' + sErr + ' erreurs' : ''), sErr ? 'err' : 'ok')
+  }
+
+  // 3. Inserer les resultats
+  let rOk = 0, rErr = 0
+  if (results.length > 0) {
+    msg('Migration des resultats...')
+    for (const r of results) {
+      try {
+        let pct = r.percent
+        if (typeof pct === 'string') pct = parseFloat(pct.replace('%', '')) || 0
+        if (typeof pct === 'number' && pct > 0 && pct < 1) pct = pct * 100
+
+        // Extraire score numerique si possible (ex: "4 / 5")
+        let correct = 0, answered = 0
+        const scoreParts = String(r.score || '').split('/')
+        if (scoreParts.length === 2) {
+          correct = parseInt(scoreParts[0].trim()) || 0
+          answered = parseInt(scoreParts[1].trim()) || 0
+        }
+
+        await rpc(supabaseUrl, supabaseKey, 'insert_resultat', {
+          p_code: r.code || '',
+          p_set_id: '',
+          p_set_title: r.set || '',
+          p_score: r.score || '',
+          p_correct: correct,
+          p_answered: answered,
+          p_percent: pct || 0,
+          p_grade: r.grade || '',
+          p_enseignant: r.enseignant || (r.code ? r.code.split('-')[0] : ''),
+        })
+        rOk++
+        if (rOk % 50 === 0) msg('  ' + rOk + ' / ' + results.length + '...', 'info')
+      } catch (err) {
+        rErr++
+        if (rErr <= 3) msg('Resultat ' + r.code + '/' + r.set + ' : ' + err.message, 'err')
+      }
+    }
+    msg('Resultats : ' + rOk + ' ok' + (rErr ? ', ' + rErr + ' erreurs' : ''), rErr ? 'err' : 'ok')
+  }
+
+  msg('Migration terminee !', 'ok')
+  btn.disabled = false
+}
+</script>
+</body>
+</html>

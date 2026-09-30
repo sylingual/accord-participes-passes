@@ -239,6 +239,53 @@ function doGet(e) {
     }
 
     out = { students: students, results: rresults };
+
+  } else if (e && e.parameter && e.parameter.exportAll) {
+    // Export complet pour migration vers Supabase
+    var allStudents = [];
+    var ecs = ss.getSheetByName('Codes');
+    if (ecs && ecs.getLastRow() >= 2) {
+      var ecols = Math.max(ecs.getLastColumn(), 5);
+      var evals = ecs.getRange(2, 1, ecs.getLastRow() - 1, ecols).getValues();
+      for (var ei = 0; ei < evals.length; ei++) {
+        allStudents.push({
+          code: String(evals[ei][0] || '').trim(),
+          prenom: evals[ei][1] || '',
+          nom: evals[ei][2] || '',
+          groupe: evals[ei][3] || '',
+          enseignant: evals[ei][4] || ''
+        });
+      }
+    }
+    var allResults = [];
+    var ersh = ss.getSheetByName('Résultats') || ss.getSheets()[0];
+    if (ersh && ersh.getLastRow() >= 2) {
+      var ercols = ersh.getLastColumn();
+      var ervals = ersh.getRange(2, 1, ersh.getLastRow() - 1, ercols).getValues();
+      var eHasEns = ercols >= 10;
+      var eCodeIdx = 1;
+      var eEnsIdx = eHasEns ? 5 : -1;
+      var eSetIdx = eHasEns ? 6 : 5;
+      var eScoreIdx = eHasEns ? 7 : 6;
+      var ePctIdx = eHasEns ? 8 : 7;
+      var eGradeIdx = eHasEns ? 9 : 8;
+      for (var eri = 0; eri < ervals.length; eri++) {
+        var eCode = String(ervals[eri][eCodeIdx] || '').trim();
+        var ePct = ervals[eri][ePctIdx];
+        if (typeof ePct === 'string') ePct = parseFloat(ePct.replace('%', '')) || 0;
+        else if (typeof ePct === 'number' && ePct < 1 && ePct > 0) ePct = ePct * 100;
+        allResults.push({
+          date: ervals[eri][0] ? new Date(ervals[eri][0]).toISOString() : '',
+          code: eCode,
+          enseignant: eEnsIdx >= 0 ? (ervals[eri][eEnsIdx] || '') : (eCode.split('-')[0] || ''),
+          set: ervals[eri][eSetIdx] || '',
+          score: String(ervals[eri][eScoreIdx] || ''),
+          percent: ePct,
+          grade: ervals[eri][eGradeIdx] || ''
+        });
+      }
+    }
+    out = { students: allStudents, results: allResults };
   }
 
   var json = JSON.stringify(out);
