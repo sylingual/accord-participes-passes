@@ -512,7 +512,7 @@ function TeacherDashboard({
             onClick={onRefresh}
             disabled={loading}
           >
-            {loading ? 'Chargement…' : 'Actualiser'}
+            Actualiser
           </button>
           <button className="btn btn-small btn-outline" onClick={onLogout}>
             Déconnexion
@@ -537,7 +537,10 @@ function TeacherDashboard({
           )}
         </h2>
         {enrichedResults.length === 0 && !fetchError ? (
-          <p className="teacher-empty">Aucun résultat pour le moment.</p>
+          <p className="teacher-empty">
+            {loading && <span className="loading-dots">Chargement</span>}
+            {!loading && 'Aucun résultat pour le moment.'}
+          </p>
         ) : (
           <>
             <input
